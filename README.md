@@ -60,20 +60,14 @@ Implementation of algorithm provided by Adriane Chapman and H. V. Jagadish. 2009
 Set running class as *QueryDatabase.java*
 
 #### Add output folder for running
+**Note**: These steps are described for using IntelliJ and may be different for different IDEs.
 1. Create *out* folder inside *WhyNot* folder
 
 2. Open Project Settings
 
-    -IntelliJ: File -> Project Structure -> Project
-
-    -Eclipse:
+    -File -> Project Structure -> Project
 
 3. Set compiler output as the new folder created
-
-## Queries Explained
-All the queries being used by the project currently are detailed in *Queries.sql*. In this file, the queries are
-explained and the unpicked data item is listed along with an explaniation as to why this data item isn't in the result
-set of said query. This information can be used to verify that the Why Not algorithm is returning the correct results.
 
 ## Running the Project
 Run the project by pressing Run.
@@ -84,3 +78,32 @@ and the why not algorithm for the corresponding unpicked data item.
 ### Outputs
 1. The result set in the form: TITLE (YEAR).
 2. The list of *Picky Manipulations* for why the unpicked data item is not in the result set.
+
+## Queries Explained
+All the queries being used by the project currently are detailed in *Queries.sql*. In this file, the queries are
+explained and the unpicked data item is listed along with an explaniation as to why this data item isn't in the result
+set of said query. This information can be used to verify that the Why Not algorithm is returning the correct results.
+
+## Files Explained
+1. QueryDatabase.java
+
+Main file that handles making calls to connect to the database, running the query, and making calls to run the Why Not algorithm.
+
+2. DatabaseConnection.java
+
+File that handles creating the connection to the database and closing the database, called by QueryDatabase.java.
+
+3. WhyNot.java
+
+Class to handle the main algorithm of Why Not. Manages creating the DAG, running the algorithm, and outputting the picky
+manipulatins.
+
+4. RelNodeLink.java
+
+Helper class used for creating the DAG. Creates a link between a manipulation and its parent manipulation.
+
+5. DAG.java
+
+Class to create the directed acyclic graph to be used by the Why Not Algorithm. Invoked by WhyNot.java. Provides the graph
+that provides a bottom up understanding of the query (from table scans upwards) as a parse tree. Also returns a topologically
+sorted ordering for use by the Why Not algorithm.
