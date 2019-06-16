@@ -13,7 +13,7 @@ Implementation of algorithm provided by Adriane Chapman and H. V. Jagadish. 2009
 
     **Note**: Different versions of mysql may have different syntax for running certain commands
 
-    *Recommended way to run this is by opening in MySQL workbench and running.*
+    *Recommended way to run this is by opening in MySQL Workbench and running.*
 
     What this file does:
     1. Create Database
@@ -69,3 +69,18 @@ Set running class as *QueryDatabase.java*
     -Eclipse:
 
 3. Set compiler output as the new folder created
+
+## Queries Explained
+All the queries being used by the project currently are detailed in *Queries.sql*. In this file, the queries are
+explained and the unpicked data item is listed along with an explaniation as to why this data item isn't in the result
+set of said query. This information can be used to verify that the Why Not algorithm is returning the correct results.
+
+## Running the Project
+Run the project by pressing Run.
+
+The program prompts for user input for which query to run. Enter 0-9 for the corresponding query. This will run the query
+and the why not algorithm for the corresponding unpicked data item.
+
+### Outputs
+1. The result set in the form: TITLE (YEAR).
+2. The list of *Picky Manipulations* for why the unpicked data item is not in the result set.
