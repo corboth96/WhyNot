@@ -61,7 +61,11 @@ Set running class as *QueryDatabase.java*
 
 #### Add output folder for running
 1. Create *out* folder inside *WhyNot* folder
+
 2. Open Project Settings
+
     -IntelliJ: File -> Project Structure -> Project
+
     -Eclipse:
+
 3. Set compiler output as the new folder created
