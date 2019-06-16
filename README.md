@@ -21,6 +21,7 @@ Capstone Project Implementation
     GRANT ALL PRIVILEGES ON smallmovies.* TO 'corie'@'localhost' IDENTIFIED BY '1234' WITH GRANT OPTION;
     ```
     **Note** If you want to use a different user/password, will have to update this in * *DatabaseConnection.java* *
+
     3. Creates tables, such as:
     ```
     DROP TABLE IF EXISTS `Movie`;
