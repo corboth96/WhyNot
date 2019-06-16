@@ -13,7 +13,7 @@ Implementation of algorithm provided by Adriane Chapman and H. V. Jagadish. 2009
 
     **Note**: Different versions of mysql may have different syntax for running certain commands
 
-    * *Recommended way to run this is by opening in MySQL workbench and running.* *
+    *Recommended way to run this is by opening in MySQL workbench and running. *
 
     What this file does:
     1. Create Database
@@ -25,7 +25,7 @@ Implementation of algorithm provided by Adriane Chapman and H. V. Jagadish. 2009
     ```
     GRANT ALL PRIVILEGES ON smallmovies.* TO 'corie'@'localhost' IDENTIFIED BY '1234' WITH GRANT OPTION;
     ```
-    **Note**: If you want to use a different user/password, will have to update this in * *DatabaseConnection.java* *
+    **Note**: If you want to use a different user/password, will have to update this in *DatabaseConnection.java*
 
     3. Creates tables, such as:
     ```
@@ -57,4 +57,11 @@ Implementation of algorithm provided by Adriane Chapman and H. V. Jagadish. 2009
 
 #### Edit configurations to indicate which class to run
 
-Set running class as * *QueryDatabase.java* *
+Set running class as *QueryDatabase.java*
+
+#### Add output folder for running
+1. Create *out* folder inside *WhyNot* folder
+2. Open Project Settings
+    -IntelliJ: File -> Project Structure -> Project
+    -Eclipse:
+3. Set compiler output as the new folder created
