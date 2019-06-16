@@ -9,11 +9,11 @@ Implementation of algorithm provided by Adriane Chapman and H. V. Jagadish. 2009
 
     Go to https://dev.mysql.com/downloads/installer/ to install MySQL
 
-2. Run * *DataInsert.sql* * to create smallmovies database & insert data
+2. Run *DataInsert.sql* to create smallmovies database & insert data
 
     **Note**: Different versions of mysql may have different syntax for running certain commands
 
-    *Recommended way to run this is by opening in MySQL workbench and running. *
+    *Recommended way to run this is by opening in MySQL workbench and running.*
 
     What this file does:
     1. Create Database
