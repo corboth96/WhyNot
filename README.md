@@ -1,14 +1,19 @@
 # WhyNot
-Capstone Project Implementation
+Implementation of algorithm provided by Adriane Chapman and H. V. Jagadish. 2009. Why Not. SIGMOD Conference (2009), 523–534.
+
+
 
 ## Before Running
 ### Set Up Database
 1. Install MySQL / MySQL Workbench
-    Go to https://dev.mysql.com/downloads/installer/ to install MySQL
-2. Run * *DataInsert.sql* * to create smallmovies database & insert data
-    **Note** Different versions of mysql may have different syntax for running certain commands
 
-    Recommended way to run this
+    Go to https://dev.mysql.com/downloads/installer/ to install MySQL
+
+2. Run * *DataInsert.sql* * to create smallmovies database & insert data
+
+    **Note**: Different versions of mysql may have different syntax for running certain commands
+
+    * *Recommended way to run this is by opening in MySQL workbench and running.* *
 
     What this file does:
     1. Create Database
@@ -20,7 +25,7 @@ Capstone Project Implementation
     ```
     GRANT ALL PRIVILEGES ON smallmovies.* TO 'corie'@'localhost' IDENTIFIED BY '1234' WITH GRANT OPTION;
     ```
-    **Note** If you want to use a different user/password, will have to update this in * *DatabaseConnection.java* *
+    **Note**: If you want to use a different user/password, will have to update this in * *DatabaseConnection.java* *
 
     3. Creates tables, such as:
     ```
@@ -49,3 +54,7 @@ Capstone Project Implementation
 #### Install Maven Dependencies
 1. org.apache.calcite:calcite-core:1.19.0
 2. mysql:mysql-connector-java:8.0.16
+
+#### Edit configurations to indicate which class to run
+
+Set running class as * *QueryDatabase.java* *
