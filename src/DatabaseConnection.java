@@ -12,7 +12,7 @@ import java.util.Properties;
  * Class to manage the database connection
  * Creates and closes the connection
  * @author Corie Both
- * @date June 5, 2019
+ * Created June 5, 2019
  */
 public class DatabaseConnection {
     Connection con;

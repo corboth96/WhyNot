@@ -12,7 +12,7 @@ import java.util.*;
  * Class to run the why not algorithm
  *  Creates the dag and then runs the main algorithm
  * @author Corie Both
- * @date June 5, 2019
+ * Created June 5, 2019
  */
 public class WhyNot {
     static DatabaseConnection conn = null;
@@ -21,7 +21,7 @@ public class WhyNot {
         conn = c;
     }
 
-    public void WhyNot(String sql, Map.Entry<String,String> unpicked) {
+    public void whyNot(String sql, Map.Entry<String,String> unpicked) {
         // generate all of the information we need for the algorithm
         DAG dag = new DAG();
         Map<RelNode,ArrayList<RelNode>> graph = dag.generateDAG(sql,conn);
@@ -36,6 +36,8 @@ public class WhyNot {
         for (RelNode n : picky) {
             System.out.print(n+": ");
             System.out.println(convertManipulation(n));
+            System.out.println();
+            System.out.println("SQL String: ");
             System.out.println(convertToSqlString(n));
         }
     }
@@ -182,14 +184,11 @@ public class WhyNot {
 
         if (query.getRelTypeName().equals("LogicalFilter")) {
             Filter filter = (Filter) query;
-
-            System.out.println();
-            System.out.println("Convert manipulation:");
             cond = filter.getCondition().toString();
 
             res = relToSqlConverter.visit(filter);
             List<SqlNode> newNode = res.qualifiedContext().fieldList();
-            System.out.println(res.asFrom().toSqlString(dialect).getSql());
+            //System.out.println(res.asFrom().toSqlString(dialect).getSql());
 
         } else if (query.getRelTypeName().equals("LogicalJoin")) {
             LogicalJoin join = (LogicalJoin) query;
@@ -230,37 +229,6 @@ public class WhyNot {
                     queue.addAll(dag.get(r));
                 }
             }
-        return finalList;
-    }
-
-
-    private List<RelNode> testPost(Map<RelNode,ArrayList<RelNode>> dag, List<RelNode> picky, List<RelNode> not) {
-        List<RelNode> finalList = new ArrayList<>(picky);
-        for (RelNode item : picky) {
-            List<RelNode> children = dag.get(item);
-            LinkedList<RelNode> queue = new LinkedList<>(children);
-            while (queue.size() > 0) {
-                RelNode r = queue.poll();
-                if (picky.contains(r)) {
-                    finalList.remove(item);
-                    queue.clear();
-                } else {
-                    queue.addAll(dag.get(r));
-                }
-
-            }
-        }
-        for (RelNode item : picky) {
-            List<RelNode> children = dag.get(item);
-            LinkedList<RelNode> queue = new LinkedList<>(children);
-            while (queue.size() > 0) {
-                RelNode r = queue.poll();
-                if (not.contains(r)) {
-                    finalList.remove(item);
-                }
-                queue.addAll(dag.get(r));
-            }
-        }
         return finalList;
     }
 }

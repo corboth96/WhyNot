@@ -14,7 +14,7 @@ import java.util.*;
 /**
  * Class to work with generating the DAG and getting specific pieces of this dag
  * @author Corie Both
- * @date Jun 5, 2019
+ * Created Jun 5, 2019
  */
 public class DAG {
     /**

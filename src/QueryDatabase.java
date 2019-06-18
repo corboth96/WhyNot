@@ -12,7 +12,7 @@ import java.util.Scanner;
  *  3. Gets the data item that we want to look for
  *  4. Calls why not for the query/unpicked data item
  * @author Corie Both
- * @date Jun 5, 2019
+ * Created Jun 5, 2019
  */
 public class QueryDatabase {
     private DatabaseConnection conn;
@@ -135,6 +135,12 @@ public class QueryDatabase {
                             "order by c.id";
                     rs = smt.executeQuery(sql);
                     break;
+                case 10:
+                    sql = "SELECT m.id,m.title,m.yearReleased FROM db.Movie m " +
+                            "JOIN db.MovieGenres mg on mg.movie_id = m.id " +
+                            "JOIN db.Genre g on g.id = mg.genre_id WHERE g.genre = 'Action'";
+                    rs = smt.executeQuery(sql);
+                    break;
             }
             if (rs != null) {
                 while (rs.next()) {
@@ -197,10 +203,13 @@ public class QueryDatabase {
             case 9:
                 unpicked.put("title", "Mrs. Doubtfire");
                 break;
+            case 10:
+                unpicked.put("title","Titanic");
+                break;
         }
 
         for (HashMap.Entry<String,String> e : unpicked.entrySet()) {
-            whyNot.WhyNot(sql,e);
+            whyNot.whyNot(sql,e);
         }
 
         q.conn.closeConnection();

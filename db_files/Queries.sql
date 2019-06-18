@@ -112,4 +112,9 @@ group by m.title, m.id,m.yearReleased
 where movieCount >= 2
 order by c.id;
 
-
+# QUERY 10: Get all action movies
+# Unpicked: Titanic
+# Why? Not an action movie
+SELECT m.id,m.title,m.yearReleased FROM Movie m
+JOIN MovieGenres mg on mg.movie_id = m.id
+JOIN Genre g on g.id = mg.genre_id WHERE g.genre = 'Action';
