@@ -1,3 +1,6 @@
+import com.sun.org.apache.regexp.internal.RE;
+import org.apache.calcite.rel.RelNode;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,9 +13,9 @@ public class Tab {
     List<String> output = new ArrayList<>();
     int level;
     Tab child;
-    String name;
+    RelNode name;
 
-    public Tab(List<String> input, List<String> compatibles, int level,Tab child,String name) {
+    public Tab(List<String> input, List<String> compatibles, int level,Tab child,RelNode name) {
         this.input = input;
         this.compatibles = compatibles;
         this.level = level;
@@ -20,20 +23,20 @@ public class Tab {
         this.name = name;
     }
 
-    public Tab(List<String> compatibles, int level,Tab child,String name) {
+    public Tab(List<String> compatibles, int level,Tab child,RelNode name) {
         this.compatibles = compatibles;
         this.level = level;
         this.child = child;
         this.name = name;
     }
 
-    public Tab(int level,Tab child,String name) {
+    public Tab(int level,Tab child,RelNode name) {
         this.level = level;
         this.child = child;
         this.name = name;
     }
 
-    public Tab(int level, String name) {
+    public Tab(int level, RelNode name) {
         this.level = level;
         this.name = name;
     }
