@@ -274,6 +274,22 @@ public class NedExplain {
             ne.runNedExplain(sql, item);
         }*/
 
+        // skipping qualified attributes for now
+        List<ConditionalTuple> predicate = new ArrayList<>();
+        ConditionalTuple ct = new ConditionalTuple();
+        ct.addVTuple("Movie.title", "Titanic");
+        ct.addCondition("ap",">", 25);
+        predicate.add(ct);
+
+
+        for (ConditionalTuple tc : predicate) {
+            Object[] type = tc.getType();
+            for (Object t : type) {
+                System.out.print(t+" ");
+            }
+            System.out.println();
+        }
+
         ne.conn.closeConnection();
     }
 
