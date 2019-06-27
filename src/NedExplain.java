@@ -10,40 +10,34 @@ import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.tools.*;
 
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Trying to figure out NedExplain
+ * NedExplain algorithm
  * @author Corie Both
+ * Date Created: June 24, 2019
  */
 public class NedExplain {
     DatabaseConnection conn;
-    List<Tab> tabQ;
-    List<RelNode> nonPickyManip;
-    List<RelNode> pickyManip;
-    List<RelNode> emptyOutput;
+    private List<Tab> tabQ;
+    private List<RelNode> nonPickyManip;
+    private List<HashMap<RelNode,List<HashMap<String,Object>>>> pickyManip;
+    private List<RelNode> emptyOutput;
 
-    public String runNedExplain(String sql, Map.Entry<String,String> unpicked) {
+    public String runNedExplain(String sql, ConditionalTuple unpicked) {
+        generateTABQ(sql,conn);
         // 1. Compatible Finder
-
-
-        // 2. Canonicalization - AC??
-        DatabaseConnection conn = new DatabaseConnection();
-        DAG dag = new DAG();
-        Map<RelNode, ArrayList<RelNode>> graph =  dag.generateDAG(sql,new DatabaseConnection());
-        compatibleFinder(graph,unpicked);
+        compatibleFinder(unpicked);
+        // 2. Canonicalize
 
         // 3. Initializations
         emptyOutput = new ArrayList<>();
         pickyManip = new ArrayList<>();
         nonPickyManip = new ArrayList<>();
-        //tabQ = new ArrayList<>();
 
         // 4. Run Algorithm
         for (int i = 0; i<tabQ.size(); i++) {
@@ -57,11 +51,13 @@ public class NedExplain {
             if (m.output == null) {
                 emptyOutput.add(m.name);
                 if (m.compatibles != null) {
-                    //pickyManip.addAll(m.compatibles);
+                    HashMap<RelNode, List<HashMap<String,Object>>> pickyItems = new HashMap<>();
+                    pickyItems.put(m.name,m.compatibles);
+                    pickyManip.add(pickyItems);
                 }
             }
             if (m.name.getRelTypeName().equals("JdbcTableScan")) {
-                child.compatibles.add("null");
+                child.compatibles.addAll(findSuccessors(m));
             } else {
                 if (m.compatibles != null) {
                     child.compatibles.addAll(findSuccessors(m));
@@ -70,9 +66,15 @@ public class NedExplain {
             }
 
         }
-        return "NONE";
+        return null;
     }
 
+    /**
+     * check for stopping early
+     * @param i - index that we are looking at
+     * @param m - manipulation that we are looking at
+     * @return T/F if we are done early
+     */
     private boolean checkEarlyTermination(int i, Tab m) {
         if (i != 0 && m.level != tabQ.get(i-1).level) {
             int j = i-1;
@@ -95,35 +97,145 @@ public class NedExplain {
     }
 
     private String getDetailedAnswer() {
+        for (HashMap<RelNode,List<HashMap<String,Object>>> obj : pickyManip) {
+
+        }
         return "NONE";
     }
 
-    private List<String> applyManipulation(Tab op) {
-        return null;
+    /**
+     * Get result of manipulation
+     * @param m - manipulation to apply
+     * @return list of result tuples
+     */
+    private List<HashMap<String, Object>> applyManipulation(Tab m) {
+        String query = convertToSqlString(m.name);
+        return runQuery(query);
     }
 
-    private List<String> findSuccessors(Tab m) {
-        List<String> successors = new ArrayList<String>();
-        for (String o : m.output) {
+    /**
+     * Find successors in result set
+     * @param m manipulation
+     * @return tuples that match
+     */
+    private List<HashMap<String,Object>> findSuccessors(Tab m) {
+        List<HashMap<String,Object>> successors = new ArrayList<>();
+        for (Object o : m.output) {
 
         }
-        List<String> blocked = new ArrayList<>(m.compatibles);
+        List<HashMap<String,Object>> blocked = new ArrayList<>(m.compatibles);
         blocked.removeAll(successors);
         if (successors!= null) {
-
+            nonPickyManip.add(m.name);
+        }
+        if (blocked != null) {
+            HashMap<RelNode,List<HashMap<String,Object>>> picky = new HashMap<>();
+            picky.put(m.name,blocked);
+            pickyManip.add(picky);
         }
         return successors;
     }
 
-    private void compatibleFinder(Map<RelNode, ArrayList<RelNode>> graph,Map.Entry<String,String> unpicked) {
-        for (RelNode n : graph.keySet()) {
-            if (n.getRelTypeName().equals("JdbcTableScan")) {
-                if (successorExists(n, unpicked)) {
-
+    /**
+     * Compatibility finder to initialize with first compatibles
+     * @param unpicked - unpicked data item
+     */
+    private void compatibleFinder(ConditionalTuple unpicked) {
+        List<HashMap<String,Object>> compatibles = new ArrayList<>();
+        for (String str : unpicked.vtuple.keySet()) {
+            if (str.contains(".")) {
+                String[] strings = str.split("\\.");
+                String table = strings[0];
+                String column = strings[1];
+                String sql = "Select * from db." + table + " where " + column + "= '" + unpicked.vtuple.get(str)+ "'";
+                compatibles = runQuery(sql);
+                for (Tab m : tabQ) {
+                    if (m.name.getRelTypeName().equals("JdbcTableScan")) {
+                        // insert into right table manipulation
+                        String relNode = convertToSqlString(m.name);
+                        if (relNode.split(table).length == 1 && relNode.contains(table)) {
+                            m.compatibles.addAll(compatibles);
+                        }
+                    }
                 }
             }
         }
+        for (Tab m : tabQ) {
+            System.out.println(m.name);
+            for (Object a : m.compatibles) {
+                System.out.print(a);
+            }
+            System.out.println();
+            System.out.println();
+        }
     }
+
+    /**
+     * Helper function to run query and save tuples
+     * @param sql - query to run
+     * @return list of tuples from that query
+     */
+    private List<HashMap<String,Object>> runQuery(String sql) {
+        Statement smt;
+        List<HashMap<String,Object>> tuples = new ArrayList<>();
+        try {
+            smt = conn.con.createStatement();
+            ResultSet rs = smt.executeQuery(sql);
+
+            List<String> columns = new ArrayList<>();
+            List<String> colTypes = new ArrayList<>();
+            for (int i = 1; i<=rs.getMetaData().getColumnCount();i++) {
+                columns.add(rs.getMetaData().getColumnName(i));
+                colTypes.add(rs.getMetaData().getColumnTypeName(i));
+            }
+
+            while (rs.next()) {
+                HashMap<String,Object> tuple = new HashMap<>();
+                for (int i = 0; i<columns.size();i++) {
+                    Object col;
+                    switch (colTypes.get(i)) {
+                        case "INTEGER":
+                            col = rs.getInt(i + 1);
+                            break;
+                        case "DATE":
+                            col = rs.getDate(i + 1);
+                            break;
+                        case "TIME":
+                            col = rs.getTime(i + 1);
+                            break;
+                        case "LONG":
+                            col = rs.getLong(i + 1);
+                            break;
+                        case "FLOAT":
+                            col = rs.getFloat(i + 1);
+                            break;
+                        case "DOUBLE":
+                            col = rs.getDouble(i + 1);
+                            break;
+                        case "BOOLEAN":
+                            col = rs.getBoolean(i + 1);
+                            break;
+                        case "DECIMAL":
+                            col = rs.getBigDecimal(i + 1);
+                            break;
+                        case "TIMESTAMP":
+                            col = rs.getTimestamp(i + 1);
+                            break;
+                        default:
+                            col = rs.getString(i + 1);
+                    }
+                    tuple.put(columns.get(i), col);
+                }
+                tuples.add(tuple);
+            }
+            rs.close();
+            smt.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return tuples;
+    }
+
 
     /**
      * Helper function to convert RelNode into SQL string to run
@@ -142,52 +254,11 @@ public class NedExplain {
     }
 
     /**
-     * Successor exists function to determine if unpicked data item is in the result set
-     * @param queryNode - relnode to convert and run on database
-     * @param unpicked data item we are looking for
-     * @return true if data item exists else false
+     * Generate the initial table
+     * @param sql - query to initialize table for
+     * @param conn - connection
      */
-    private boolean successorExists(RelNode queryNode, HashMap.Entry<String,String> unpicked) {
-        Statement smt;
-        try {
-            smt = conn.con.createStatement();
-            smt.setQueryTimeout(60);
-            String query = convertToSqlString(queryNode);
-            //System.out.println(query);
-
-            ResultSet rs = smt.executeQuery(query);
-            ResultSetMetaData rsmd = rs.getMetaData();
-            boolean successorVisible = false;
-            for (int i = 1; i<rsmd.getColumnCount(); i++) {
-                if (unpicked.getKey().equals(rsmd.getColumnName(i))) {
-                    successorVisible = true;
-                }
-            }
-            // successor visibility
-            if (successorVisible) {
-                int columnIndex = rs.findColumn(unpicked.getKey());
-                while (rs.next()) {
-                    if (rs.getString(columnIndex).equals(unpicked.getValue())) {
-                        rs.close();
-                        smt.close();
-                        return true;
-                    }
-                }
-                rs.close();
-                smt.close();
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-
-
-
-
-    public void generateTABQ(String sql, DatabaseConnection conn) {
+    private void generateTABQ(String sql, DatabaseConnection conn) {
         try {
             tabQ = new ArrayList<>();
             SchemaPlus schema = conn.cc.getRootSchema().getSubSchema("DB");
@@ -213,7 +284,6 @@ public class NedExplain {
             RelVisitor rv = new RelVisitor() {
                 @Override
                 public void visit(RelNode node, int ordinal, RelNode parent) {
-                    System.out.println(parent);
                     int level;
                     if (parent == null) {
                         level = 0;
@@ -238,7 +308,6 @@ public class NedExplain {
             };
             rv.go(relNode);
 
-
             int topLevel = tabs.get(tabs.size()-1).level;
             for (int i = topLevel; i>= 0; i--) {
                 for (Tab t : tabs) {
@@ -248,7 +317,6 @@ public class NedExplain {
                 }
             }
         }
-
         catch (SqlParseException | RelConversionException | ValidationException e) {
             e.printStackTrace();
         }
@@ -265,30 +333,20 @@ public class NedExplain {
                 "having count(director_id)>=2) and g.genre = 'Action'";
         ne.generateTABQ(sql,ne.conn);
 
-
-
-
-       /* Map<String,String> unpicked = new HashMap<>();
-        unpicked.put("title","Titanic");
-        for (Map.Entry item : unpicked.entrySet()) {
-            ne.runNedExplain(sql, item);
-        }*/
-
         // skipping qualified attributes for now
         List<ConditionalTuple> predicate = new ArrayList<>();
         ConditionalTuple ct = new ConditionalTuple();
         ct.addVTuple("Movie.title", "Titanic");
-        ct.addCondition("ap",">", 25);
+       // ct.addCondition("ap",">", 25);
         predicate.add(ct);
 
-
+        /***** Not ready for this yet *****/
         for (ConditionalTuple tc : predicate) {
-            Object[] type = tc.getType();
-            for (Object t : type) {
-                System.out.print(t+" ");
-            }
-            System.out.println();
+            ne.compatibleFinder(tc);
+           // ne.runNedExplain(sql,tc);
         }
+
+
 
         ne.conn.closeConnection();
     }
