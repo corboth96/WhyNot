@@ -202,19 +202,23 @@ public class NedExplain {
                 String[] strings = str.split("\\.");
                 String table = strings[0];
                 String column = strings[1];
-                String sql = "Select * from db." + table + " where " + column + "= '" + unpicked.vtuple.get(str)+ "'";
-                compatibles = runQuery(sql);
                 for (Tab m : tabQ) {
                     if (m.name.getRelTypeName().equals("JdbcTableScan")) {
-                        // insert into right table manipulation
-                        String relNode = convertToSqlString(m.name);
-                        if (relNode.split(table).length == 1 && relNode.contains(table)) {
-                            m.compatibles.addAll(compatibles);
+                        String relNodeStr = convertToSqlString(m.name);
+                        if (relNodeStr.split(table).length == 1 && relNodeStr.contains(table)) {
+                            for (HashMap<String,Object> tuple : m.input) {
+                                if (tuple.get(column).equals(unpicked.vtuple.get(str))) {
+                                    m.compatibles.add(tuple);
+                                }
+                            }
                         }
+
                     }
+
                 }
             }
         }
+
         System.out.println();
         for (int i = 0; i<tabQ.size(); i++) {
             System.out.print(tabQ.get(i).name);
