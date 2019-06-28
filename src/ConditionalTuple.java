@@ -44,8 +44,13 @@ public class ConditionalTuple {
      * get type of the conditional tuple
      * @return list of the types
      */
-    public Object[] getType() {
-        return vtuple.keySet().toArray();
+    public List<String> getType() {
+        Object[] types = vtuple.keySet().toArray();
+        List<String> typeStrings = new ArrayList<>();
+        for (Object o : types) {
+            typeStrings.add((String)o);
+        }
+        return typeStrings;
     }
 
     /**

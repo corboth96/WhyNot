@@ -25,7 +25,7 @@ public class NedExplain {
     DatabaseConnection conn;
     private List<Tab> tabQ;
     private List<RelNode> nonPickyManip;
-    private List<HashMap<RelNode,List<HashMap<String,Object>>>> pickyManip;
+    private List<AnswerTuple> pickyManip;
     private List<RelNode> emptyOutput;
 
     public String runNedExplain(String sql, ConditionalTuple unpicked) {
@@ -46,21 +46,25 @@ public class NedExplain {
                 return getDetailedAnswer();
             }
             m.output = applyManipulation(m);
-            Tab child = m.child;
-            child.input.addAll(m.output);
+            int child_index = -1;
+            for (int ind = 0; ind < tabQ.size(); ind++) {
+                if (tabQ.get(ind).name.equals(m.child)) {
+                    child_index = ind;
+                }
+            }
+            tabQ.get(child_index).input.addAll(m.output);
             if (m.output == null) {
                 emptyOutput.add(m.name);
                 if (m.compatibles != null) {
-                    HashMap<RelNode, List<HashMap<String,Object>>> pickyItems = new HashMap<>();
-                    pickyItems.put(m.name,m.compatibles);
-                    pickyManip.add(pickyItems);
+                    AnswerTuple at = new AnswerTuple(m.name,m.compatibles);
+                    pickyManip.add(at);
                 }
             }
             if (m.name.getRelTypeName().equals("JdbcTableScan")) {
-                child.compatibles.addAll(findSuccessors(m));
+                tabQ.get(child_index).compatibles.addAll(findSuccessors(m, unpicked));
             } else {
                 if (m.compatibles != null) {
-                    child.compatibles.addAll(findSuccessors(m));
+                    tabQ.get(child_index).compatibles.addAll(findSuccessors(m, unpicked));
                     nonPickyManip.add(m.name);
                 }
             }
@@ -97,9 +101,54 @@ public class NedExplain {
     }
 
     private String getDetailedAnswer() {
-        for (HashMap<RelNode,List<HashMap<String,Object>>> obj : pickyManip) {
-
+        System.out.println("----------Detailed Answer:----------");
+        System.out.print("{");
+        boolean isFirst = true;
+        for (AnswerTuple answer : pickyManip) {
+            for (HashMap<String,Object> ans : answer.getDetailed().keySet()) {
+                if (isFirst) {
+                    System.out.print("(");
+                    System.out.print(ans);
+                    System.out.print("," + answer.getDetailed().get(ans));
+                    System.out.println(")");
+                    isFirst = false;
+                } else {
+                    System.out.print(", (");
+                    System.out.print(ans);
+                    System.out.print("," + answer.getDetailed().get(ans));
+                    System.out.println(")");
+                }
+            }
         }
+        System.out.println("}");
+
+        System.out.println("----------Condensed Answer:----------");
+        System.out.print("{");
+        isFirst = true;
+        for (AnswerTuple answer : pickyManip) {
+            if (isFirst) {
+                System.out.print(answer.manipulation);
+                isFirst = false;
+            } else {
+                System.out.print(", "+answer.manipulation);
+            }
+        }
+        System.out.println("}");
+
+        System.out.println("----------Secondary Answer:----------");
+        System.out.print("(");
+        isFirst = true;
+        for (RelNode m : emptyOutput) {
+            if (isFirst) {
+                System.out.print(m);
+                isFirst = false;
+            } else {
+                System.out.print(", "+m);
+            }
+        }
+        System.out.println(")");
+
+
         return "NONE";
     }
 
@@ -118,20 +167,26 @@ public class NedExplain {
      * @param m manipulation
      * @return tuples that match
      */
-    private List<HashMap<String,Object>> findSuccessors(Tab m) {
+    private List<HashMap<String,Object>> findSuccessors(Tab m, ConditionalTuple tc) {
         List<HashMap<String,Object>> successors = new ArrayList<>();
-        for (Object o : m.output) {
-
+        for (HashMap<String,Object> o : m.output) {
+            for (String key : o.keySet()) {
+                if (tc.getType().contains(key)) {
+                    Object col = tc.vtuple.get(key);
+                    if (o.get(key).equals(col)) {
+                        successors.add(o);
+                    }
+                }
+            }
         }
         List<HashMap<String,Object>> blocked = new ArrayList<>(m.compatibles);
         blocked.removeAll(successors);
-        if (successors!= null) {
+        if (successors.size() != 0) {
             nonPickyManip.add(m.name);
         }
-        if (blocked != null) {
-            HashMap<RelNode,List<HashMap<String,Object>>> picky = new HashMap<>();
-            picky.put(m.name,blocked);
-            pickyManip.add(picky);
+        if (blocked.size() != 0) {
+            AnswerTuple at = new AnswerTuple(m.name,blocked);
+            pickyManip.add(at);
         }
         return successors;
     }
@@ -141,7 +196,7 @@ public class NedExplain {
      * @param unpicked - unpicked data item
      */
     private void compatibleFinder(ConditionalTuple unpicked) {
-        List<HashMap<String,Object>> compatibles = new ArrayList<>();
+        List<HashMap<String,Object>> compatibles;
         for (String str : unpicked.vtuple.keySet()) {
             if (str.contains(".")) {
                 String[] strings = str.split("\\.");
@@ -165,7 +220,6 @@ public class NedExplain {
             for (Object a : m.compatibles) {
                 System.out.print(a);
             }
-            System.out.println();
             System.out.println();
         }
     }
@@ -281,9 +335,12 @@ public class NedExplain {
             HashMap<RelNode, Integer> levels = new HashMap<>();
             List<Tab> tabs = new ArrayList<>();
 
+            List<RelNodeLink> entries = new ArrayList<>();
             RelVisitor rv = new RelVisitor() {
                 @Override
                 public void visit(RelNode node, int ordinal, RelNode parent) {
+                    RelNodeLink e = new RelNodeLink(node,parent);
+                    entries.add(e);
                     int level;
                     if (parent == null) {
                         level = 0;
@@ -316,6 +373,24 @@ public class NedExplain {
                     }
                 }
             }
+
+            for (RelNodeLink e : entries) {
+                RelNode entry = e.entry;
+                RelNode child = e.parent;
+                for (Tab m : tabQ) {
+                    if (m.name.equals(entry)) {
+                        m.child = child;
+                    }
+                }
+            }
+
+            // for testing
+            for (int i = 0; i<tabQ.size(); i++) {
+                System.out.print(tabQ.get(i).name);
+                System.out.print("\t"+tabQ.get(i).level);
+                System.out.print("\t"+tabQ.get(i).child);
+                System.out.println();
+            }
         }
         catch (SqlParseException | RelConversionException | ValidationException e) {
             e.printStackTrace();
@@ -343,7 +418,7 @@ public class NedExplain {
         /***** Not ready for this yet *****/
         for (ConditionalTuple tc : predicate) {
             ne.compatibleFinder(tc);
-           // ne.runNedExplain(sql,tc);
+            //ne.runNedExplain(sql,tc);
         }
 
 
