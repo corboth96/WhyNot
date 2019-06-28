@@ -16,6 +16,25 @@ public class Tab {
     RelNode child;
     RelNode name;
 
+    public Tab(List<HashMap<String,Object>> inputs, int level, RelNode name) {
+        this.level = level;
+        this.name = name;
+        this.input.addAll(inputs);
+    }
+
+    public Tab(List<HashMap<String,Object>> inputs, int level, RelNode name, RelNode child) {
+        this.level = level;
+        this.name = name;
+        this.input.addAll(inputs);
+        this.child = child;
+    }
+
+    public Tab(int level, RelNode name, RelNode child) {
+        this.level = level;
+        this.name = name;
+        this.child = child;
+    }
+
     public Tab(int level, RelNode name) {
         this.level = level;
         this.name = name;

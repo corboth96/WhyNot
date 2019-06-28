@@ -215,11 +215,13 @@ public class NedExplain {
                 }
             }
         }
-        for (Tab m : tabQ) {
-            System.out.println(m.name);
-            for (Object a : m.compatibles) {
-                System.out.print(a);
-            }
+        System.out.println();
+        for (int i = 0; i<tabQ.size(); i++) {
+            System.out.print(tabQ.get(i).name);
+            System.out.print("\t"+tabQ.get(i).level);
+            System.out.print("\t"+tabQ.get(i).child);
+            System.out.print("\t"+tabQ.get(i).input.size());
+            System.out.print("\t"+tabQ.get(i).compatibles);
             System.out.println();
         }
     }
@@ -335,12 +337,9 @@ public class NedExplain {
             HashMap<RelNode, Integer> levels = new HashMap<>();
             List<Tab> tabs = new ArrayList<>();
 
-            List<RelNodeLink> entries = new ArrayList<>();
             RelVisitor rv = new RelVisitor() {
                 @Override
                 public void visit(RelNode node, int ordinal, RelNode parent) {
-                    RelNodeLink e = new RelNodeLink(node,parent);
-                    entries.add(e);
                     int level;
                     if (parent == null) {
                         level = 0;
@@ -348,7 +347,13 @@ public class NedExplain {
                         level = levels.get(parent)+1;
                     }
                     levels.put(node,level);
-                    Tab tab = new Tab(level,node);
+                    Tab tab;
+                    if (node.getRelTypeName().equals("JdbcTableScan")) {
+                        String tableScan = convertToSqlString(node);
+                        tab = new Tab(runQuery(tableScan), level, node, parent);
+                    } else {
+                        tab = new Tab(level, node, parent);
+                    }
                     tabs.add(tab);
                     super.visit(node, ordinal, parent);
                 }
@@ -372,24 +377,6 @@ public class NedExplain {
                         tabQ.add(t);
                     }
                 }
-            }
-
-            for (RelNodeLink e : entries) {
-                RelNode entry = e.entry;
-                RelNode child = e.parent;
-                for (Tab m : tabQ) {
-                    if (m.name.equals(entry)) {
-                        m.child = child;
-                    }
-                }
-            }
-
-            // for testing
-            for (int i = 0; i<tabQ.size(); i++) {
-                System.out.print(tabQ.get(i).name);
-                System.out.print("\t"+tabQ.get(i).level);
-                System.out.print("\t"+tabQ.get(i).child);
-                System.out.println();
             }
         }
         catch (SqlParseException | RelConversionException | ValidationException e) {
