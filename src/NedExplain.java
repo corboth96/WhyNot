@@ -28,13 +28,16 @@ public class NedExplain {
     private List<AnswerTuple> pickyManip;
     private List<RelNode> emptyOutput;
 
+    List<HashMap<String,Object>> dirTc;
+    List<HashMap<String,Object>> inDirTc;
+
     public String runNedExplain(String sql, ConditionalTuple unpicked) {
-        generateTABQ(sql,conn);
         // 1. Compatible Finder
         compatibleFinder(unpicked);
         // 2. Canonicalize
 
         // 3. Initializations
+        generateTABQ(sql,conn);
         emptyOutput = new ArrayList<>();
         pickyManip = new ArrayList<>();
         nonPickyManip = new ArrayList<>();
@@ -42,7 +45,9 @@ public class NedExplain {
         // 4. Run Algorithm
         for (int i = 0; i<tabQ.size(); i++) {
             Tab m = tabQ.get(i);
+            System.out.println(m.name);
             if (checkEarlyTermination(i,m)) {
+                System.out.println("HERE");
                 return getDetailedAnswer();
             }
             m.output = applyManipulation(m);
@@ -52,6 +57,8 @@ public class NedExplain {
                     child_index = ind;
                 }
             }
+
+
             tabQ.get(child_index).input.addAll(m.output);
             if (m.output == null) {
                 emptyOutput.add(m.name);
@@ -82,7 +89,7 @@ public class NedExplain {
     private boolean checkEarlyTermination(int i, Tab m) {
         if (i != 0 && m.level != tabQ.get(i-1).level) {
             int j = i-1;
-            while (j >= 0 && tabQ.get(j).level == tabQ.get(i-1).level) {
+            while (j >= 0 && tabQ.get(j).level == tabQ.get(i-1).level && tabQ.get(j).child.equals(tabQ.get(i-1).child)) {
                 if (nonPickyManip.contains(tabQ.get(j).name)) {
                     return false;
                 }
@@ -95,6 +102,7 @@ public class NedExplain {
                 i += 1;
             }
         } else {
+            // this is only the first element!
             return false;
         }
         return true;
@@ -191,12 +199,30 @@ public class NedExplain {
         return successors;
     }
 
+
+    private void calculateCompatibility(ConditionalTuple tc) {
+        // TODO: figure out how these work and fix them
+        // Dirtc = match qualified named attributes
+        // Indirtc = match all other attributes
+        dirTc = new ArrayList<>();
+        HashMap<String,HashMap<String,Object>> qualifieds = tc.getQualifiedAttributes();
+        for (String table : qualifieds.keySet()) {
+            String sql = "SELECT * from db."+table;
+            List<HashMap<String,Object>> results = runQuery(sql);
+            for (HashMap<String,Object> tuple : results) {
+                if (tuple.entrySet().containsAll(qualifieds.get(table).entrySet())) {
+                    dirTc.add(tuple);
+                }
+            }
+        }
+    }
+
     /**
      * Compatibility finder to initialize with first compatibles
      * @param unpicked - unpicked data item
      */
     private void compatibleFinder(ConditionalTuple unpicked) {
-        List<HashMap<String,Object>> compatibles;
+        // TODO: correct this for correct compatibility finder
         for (String str : unpicked.vtuple.keySet()) {
             if (str.contains(".")) {
                 String[] strings = str.split("\\.");
@@ -219,15 +245,17 @@ public class NedExplain {
             }
         }
 
+        // testing output
         System.out.println();
-        for (int i = 0; i<tabQ.size(); i++) {
-            System.out.print(tabQ.get(i).name);
-            System.out.print("\t"+tabQ.get(i).level);
-            System.out.print("\t"+tabQ.get(i).child);
-            System.out.print("\t"+tabQ.get(i).input.size());
-            System.out.print("\t"+tabQ.get(i).compatibles);
+        for (Tab aTabQ : tabQ) {
+            System.out.print(aTabQ.name);
+            System.out.print("\t" + aTabQ.level);
+            System.out.print("\t" + aTabQ.child);
+            System.out.print("\t" + aTabQ.input.size());
+            System.out.print("\t" + aTabQ.compatibles);
             System.out.println();
         }
+        System.out.println();
     }
 
     /**
@@ -374,6 +402,7 @@ public class NedExplain {
             };
             rv.go(relNode);
 
+            // reverse order for going through from top level to 0
             int topLevel = tabs.get(tabs.size()-1).level;
             for (int i = topLevel; i>= 0; i--) {
                 for (Tab t : tabs) {
@@ -403,12 +432,15 @@ public class NedExplain {
         List<ConditionalTuple> predicate = new ArrayList<>();
         ConditionalTuple ct = new ConditionalTuple();
         ct.addVTuple("Movie.title", "Titanic");
+        ct.addVTuple("Movie.yearReleased",1993);
+        ct.addVTuple("Director.fname","John");
        // ct.addCondition("ap",">", 25);
         predicate.add(ct);
 
         /***** Not ready for this yet *****/
         for (ConditionalTuple tc : predicate) {
-            ne.compatibleFinder(tc);
+            ne.calculateCompatibility(tc);
+            //ne.compatibleFinder(tc);
             //ne.runNedExplain(sql,tc);
         }
 

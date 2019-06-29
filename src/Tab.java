@@ -35,9 +35,4 @@ public class Tab {
         this.child = child;
     }
 
-    public Tab(int level, RelNode name) {
-        this.level = level;
-        this.name = name;
-    }
-
 }

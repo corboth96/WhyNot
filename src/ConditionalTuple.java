@@ -1,3 +1,5 @@
+import org.apache.calcite.adapter.java.Array;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +53,51 @@ public class ConditionalTuple {
             typeStrings.add((String)o);
         }
         return typeStrings;
+    }
+
+    /**
+     * Helper function for typing tc and finding compatible tuples
+     * @return
+     */
+    public HashMap<String,HashMap<String,Object>> getQualifiedAttributes() {
+        /*HashMap<String, ArrayList<String>> qualified = new HashMap<>();
+        for (String name : vtuple.keySet()) {
+            if (name.contains(".")) {
+                String[] strings = name.split("\\.");
+                String table = strings[0];
+                String col = strings[1];
+                if (qualified.containsKey(table)) {
+                    ArrayList<String> temp = qualified.get(table);
+                    temp.add(col);
+                    qualified.replace(table,temp);
+                } else {
+                    ArrayList<String> temp = new ArrayList<>();
+                    temp.add(col);
+                    qualified.put(table,temp);
+                }
+            }
+        }*/
+
+        HashMap<String,HashMap<String,Object>> qualifiers = new HashMap<>();
+        for (String name : vtuple.keySet()) {
+            if (name.contains(".")) {
+                String[] strings = name.split("\\.");
+                String table = strings[0];
+                String col = strings[1];
+                if (qualifiers.containsKey(table)) {
+                    HashMap<String,Object> temp = qualifiers.get(table);
+                    temp.put(col,vtuple.get(name));
+                    qualifiers.replace(table,temp);
+
+
+                } else {
+                    HashMap<String,Object> temp = new HashMap<>();
+                    temp.put(col,vtuple.get(name));
+                    qualifiers.put(table,temp);
+                }
+            }
+        }
+        return qualifiers;
     }
 
     /**
