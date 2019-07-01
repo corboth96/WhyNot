@@ -57,27 +57,9 @@ public class ConditionalTuple {
 
     /**
      * Helper function for typing tc and finding compatible tuples
-     * @return
+     * @return hashmap of table and columns we are looking for
      */
     public HashMap<String,HashMap<String,Object>> getQualifiedAttributes() {
-        /*HashMap<String, ArrayList<String>> qualified = new HashMap<>();
-        for (String name : vtuple.keySet()) {
-            if (name.contains(".")) {
-                String[] strings = name.split("\\.");
-                String table = strings[0];
-                String col = strings[1];
-                if (qualified.containsKey(table)) {
-                    ArrayList<String> temp = qualified.get(table);
-                    temp.add(col);
-                    qualified.replace(table,temp);
-                } else {
-                    ArrayList<String> temp = new ArrayList<>();
-                    temp.add(col);
-                    qualified.put(table,temp);
-                }
-            }
-        }*/
-
         HashMap<String,HashMap<String,Object>> qualifiers = new HashMap<>();
         for (String name : vtuple.keySet()) {
             if (name.contains(".")) {

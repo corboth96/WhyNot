@@ -28,8 +28,8 @@ public class NedExplain {
     private List<AnswerTuple> pickyManip;
     private List<RelNode> emptyOutput;
 
-    List<HashMap<String,Object>> dirTc;
-    List<HashMap<String,Object>> inDirTc;
+    private List<HashMap<String,Object>> dirTc;
+    private List<HashMap<String,Object>> inDirTc;
 
     public String runNedExplain(String sql, ConditionalTuple unpicked) {
         // 1. Compatible Finder
@@ -37,7 +37,7 @@ public class NedExplain {
         // 2. Canonicalize
 
         // 3. Initializations
-        generateTABQ(sql,conn);
+        generateTABQ(sql,conn,unpicked);
         emptyOutput = new ArrayList<>();
         pickyManip = new ArrayList<>();
         nonPickyManip = new ArrayList<>();
@@ -102,7 +102,6 @@ public class NedExplain {
                 i += 1;
             }
         } else {
-            // this is only the first element!
             return false;
         }
         return true;
@@ -200,7 +199,7 @@ public class NedExplain {
     }
 
 
-    private void calculateCompatibility(ConditionalTuple tc) {
+    private void compatibleFinder(ConditionalTuple tc) {
         // TODO: figure out how these work and fix them
         // Dirtc = match qualified named attributes
         // Indirtc = match all other attributes
@@ -215,32 +214,29 @@ public class NedExplain {
                 }
             }
         }
+
+        for (HashMap<String,Object> item : dirTc) {
+            System.out.println(item);
+        }
+
+        inDirTc = new ArrayList<>();
+
     }
 
     /**
      * Compatibility finder to initialize with first compatibles
      * @param unpicked - unpicked data item
      */
-    private void compatibleFinder(ConditionalTuple unpicked) {
-        // TODO: correct this for correct compatibility finder
-        for (String str : unpicked.vtuple.keySet()) {
-            if (str.contains(".")) {
-                String[] strings = str.split("\\.");
-                String table = strings[0];
-                String column = strings[1];
-                for (Tab m : tabQ) {
-                    if (m.name.getRelTypeName().equals("JdbcTableScan")) {
-                        String relNodeStr = convertToSqlString(m.name);
-                        if (relNodeStr.split(table).length == 1 && relNodeStr.contains(table)) {
-                            for (HashMap<String,Object> tuple : m.input) {
-                                if (tuple.get(column).equals(unpicked.vtuple.get(str))) {
-                                    m.compatibles.add(tuple);
-                                }
-                            }
+    private void computeCompatibles(ConditionalTuple unpicked) {
+        for (Tab m: tabQ) {
+            if (m.name.getRelTypeName().equals("JdbcTableScan")) {
+                String tableName = m.name.getTable().getQualifiedName().get(1);
+                for (HashMap<String,Object> tuple : m.input) {
+                    for (HashMap<String,Object> compatible : dirTc) {
+                        if (tuple.entrySet().containsAll(compatible.entrySet())) {
+                            m.compatibles.add(tuple);
                         }
-
                     }
-
                 }
             }
         }
@@ -256,6 +252,7 @@ public class NedExplain {
             System.out.println();
         }
         System.out.println();
+
     }
 
     /**
@@ -346,7 +343,7 @@ public class NedExplain {
      * @param sql - query to initialize table for
      * @param conn - connection
      */
-    private void generateTABQ(String sql, DatabaseConnection conn) {
+    private void generateTABQ(String sql, DatabaseConnection conn, ConditionalTuple unpicked) {
         try {
             tabQ = new ArrayList<>();
             SchemaPlus schema = conn.cc.getRootSchema().getSubSchema("DB");
@@ -411,6 +408,7 @@ public class NedExplain {
                     }
                 }
             }
+            computeCompatibles(unpicked);
         }
         catch (SqlParseException | RelConversionException | ValidationException e) {
             e.printStackTrace();
@@ -426,21 +424,21 @@ public class NedExplain {
                 "left join db.Genre g on g.id = mg.genre_id where m.id in " +
                 "(select movie_id from db.DirectedBy group by movie_id " +
                 "having count(director_id)>=2) and g.genre = 'Action'";
-        ne.generateTABQ(sql,ne.conn);
+
 
         // skipping qualified attributes for now
         List<ConditionalTuple> predicate = new ArrayList<>();
         ConditionalTuple ct = new ConditionalTuple();
         ct.addVTuple("Movie.title", "Titanic");
-        ct.addVTuple("Movie.yearReleased",1993);
+        ct.addVTuple("Movie.yearReleased",1997);
         ct.addVTuple("Director.fname","John");
+        //ct.addVTuple("Director.lname","Lasseter");
        // ct.addCondition("ap",">", 25);
         predicate.add(ct);
-
         /***** Not ready for this yet *****/
         for (ConditionalTuple tc : predicate) {
-            ne.calculateCompatibility(tc);
-            //ne.compatibleFinder(tc);
+            ne.compatibleFinder(tc);
+            ne.generateTABQ(sql,ne.conn,tc);
             //ne.runNedExplain(sql,tc);
         }
 
