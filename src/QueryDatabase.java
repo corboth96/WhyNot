@@ -30,115 +30,115 @@ public class QueryDatabase {
             ResultSet rs = null;
             switch (i) {
                 case 0:
-                    sql = "select id, title, yearReleased from db.Movie";
+                    sql = "select movie_id, title, yearReleased from db.Movie";
                     rs = smt.executeQuery(sql);
                     break;
                 case 1:
-                    sql = "select id, title, yearReleased from db.Movie " +
+                    sql = "select movie_id, title, yearReleased from db.Movie " +
                             "WHERE yearReleased < 2018 and yearReleased > 2000";
                     rs = smt.executeQuery(sql);
                     break;
                 case 2:
-                    sql = "select ss.id, ss.title, ss.yearReleased from " +
-                            "(select id, title, yearReleased from db.Movie m " +
-                            "join db.Roles r on m.id = r.movie_id  where r.actor_id in " +
-                            "(select id from db.Actor where fname= 'Kate' and lname = 'Winslet')) ss " +
-                            "inner join (select id, title, yearReleased from db.Movie m join db.Roles " +
-                            "r on m.id = r.movie_id where r.actor_id in (select id from db.Actor " +
-                            "where fname = 'Leonardo' and lname = 'DiCaprio')) jc on ss.id = jc.id ";
+                    sql = "select ss.movie_id, ss.title, ss.yearReleased from " +
+                            "(select m.movie_id, title, yearReleased from db.Movie m " +
+                            "join db.Roles r on m.movie_id = r.movie_id  where r.actor_id in " +
+                            "(select actor_id from db.Actor where fname= 'Kate' and lname = 'Winslet')) ss " +
+                            "inner join (select m.movie_id, title, yearReleased from db.Movie m join db.Roles " +
+                            "r on m.movie_id = r.movie_id where r.actor_id in (select actor_id from db.Actor " +
+                            "where fname = 'Leonardo' and lname = 'DiCaprio')) jc on ss.movie_id = jc.movie_id ";
                     rs = smt.executeQuery(sql);
                     break;
                 case 3:
-                    sql = "select m.id,m.title,m.yearReleased from db.Movie m " +
-                            "left join db.MovieGenres mg on m.id = mg.movie_id " +
-                            "left join db.Genre g on g.id = mg.genre_id where m.id in " +
+                    sql = "select m.movie_id,m.title,m.yearReleased from db.Movie m " +
+                            "left join db.MovieGenres mg on m.movie_id = mg.movie_id " +
+                            "left join db.Genre g on g.genre_id = mg.genre_id where m.movie_id in " +
                             "(select movie_id from db.DirectedBy group by movie_id " +
                             "having count(director_id)>=2) and g.genre = 'Action'";
                     rs = smt.executeQuery(sql);
                     break;
                 case 4:
-                    sql = "select g.id as id, g.title, g.yearReleased from " +
-                            "(select id, title, yearReleased from db.movie m join db.moviegenres mg on m.id = mg.movie_id " +
-                            "where mg.genre_id in (select id from db.genre where genre = 'Family')) g " +
+                    sql = "select g.movie_id, g.title, g.yearReleased from " +
+                            "(select m.movie_id, title, yearReleased from db.movie m join db.moviegenres mg on m.movie_id = mg.movie_id " +
+                            "where mg.genre_id in (select genre_id from db.genre where genre = 'Family')) g " +
                             "inner join " +
-                            "(select id, title, yearReleased from db.movie m join db.directedby db on m.id = db.movie_id " +
-                            "where db.director_id in (select id from db.director where fname = 'John' and lname = 'Lasseter')) d " +
-                            "using(id)" +
+                            "(select m.movie_id, title, yearReleased from db.movie m join db.directedby db on m.movie_id = db.movie_id " +
+                            "where db.director_id in (select director_id from db.director where fname = 'John' and lname = 'Lasseter')) d " +
+                            "using(movie_id)" +
                             "inner join " +
-                            "(select id, title, yearReleased from db.movie m join db.roles r on m.id = r.movie_id " +
-                            "where r.actor_id in (select id from db.actor where fname = 'Tom' and lname = 'Hanks')) a " +
-                            "on a.id = g.id and g.id = d.id";
+                            "(select m.movie_id, title, yearReleased from db.movie m join db.roles r on m.movie_id = r.movie_id " +
+                            "where r.actor_id in (select actor_id from db.actor where fname = 'Tom' and lname = 'Hanks')) a " +
+                            "on a.movie_id = g.movie_id and g.movie_id = d.movie_id";
                     rs = smt.executeQuery(sql);
 
                     break;
                 case 5:
-                    sql = "select g.id as id, g.title, g.yearReleased from " +
-                            "(select id, title, yearReleased from db.movie m join db.moviegenres mg on m.id = mg.movie_id " +
-                            "where genre_id in (select id from db.genre where genre = 'Action')) g " +
+                    sql = "select g.movie_id, g.title, g.yearReleased from " +
+                            "(select m.movie_id, title, yearReleased from db.movie m join db.moviegenres mg on m.movie_id = mg.movie_id " +
+                            "where genre_id in (select genre_id from db.genre where genre = 'Action')) g " +
                             "inner join " +
-                            "(select id, title, yearReleased from db.movie m join db.directedby db on m.id = db.movie_id " +
-                            "where director_id in (select id from db.director where fname = 'James' and lname = 'Cameron')) d " +
-                            "using (id)";
+                            "(select m.movie_id, title, yearReleased from db.movie m join db.directedby db on m.movie_id = db.movie_id " +
+                            "where director_id in (select director_id from db.director where fname = 'James' and lname = 'Cameron')) d " +
+                            "using (movie_id)";
                     rs = smt.executeQuery(sql);
                     break;
                 case 6:
                     sql = "select * from " +
-                            "(select id, title, yearReleased from db.movie m join db.moviegenres mg on m.id = mg.movie_id " +
-                            "where genre_id in (select id from db.genre where genre = 'Drama')) g " +
+                            "(select m.movie_id, title, yearReleased from db.movie m join db.moviegenres mg on m.movie_id = mg.movie_id " +
+                            "where genre_id in (select genre_id from db.genre where genre = 'Drama')) g " +
                             "inner join " +
-                            "(select id, title, yearReleased from db.movie m join db.directedby db on m.id = db.movie_id " +
-                            "where director_id in (select id from db.director where fname = 'Steven' and lname = 'Spielberg')) d " +
-                            "using (id) " +
+                            "(select m.movie_id, title, yearReleased from db.movie m join db.directedby db on m.movie_id = db.movie_id " +
+                            "where director_id in (select director_id from db.director where fname = 'Steven' and lname = 'Spielberg')) d " +
+                            "using (movie_id) " +
                             "where g.yearReleased > 2000";
                     rs = smt.executeQuery(sql);
                     break;
                 case 7:
-                    sql = "select m.id, m.title, m.yearReleased from " +
-                            "(select id, title, yearReleased from db.movie) m " +
+                    sql = "select m.movie_id, m.title, m.yearReleased from " +
+                            "(select movie_id, title, yearReleased from db.movie) m " +
                             "inner join " +
-                            "(select movie_id from db.moviegenres mg join db.genre g on g.id = mg.genre_id " +
+                            "(select movie_id from db.moviegenres mg join db.genre g on g.genre_id = mg.genre_id " +
                             "where genre = 'Romance') a " +
-                            "on m.id = a.movie_id " +
+                            "on m.movie_id = a.movie_id " +
                             "inner join " +
-                            "(select movie_id from db.moviegenres mg join db.genre g on g.id = mg.genre_id " +
+                            "(select movie_id from db.moviegenres mg join db.genre g on g.genre_id = mg.genre_id " +
                             "where genre = 'Comedy') r " +
-                            "on m.id = r.movie_id " +
+                            "on m.movie_id = r.movie_id " +
                             "inner join " +
-                            "(select movie_id from db.moviegenres mg join db.genre g on g.id = mg.genre_id " +
+                            "(select movie_id from db.moviegenres mg join db.genre g on g.genre_id = mg.genre_id " +
                             "where genre = 'Family') d " +
-                            "on m.id = d.movie_id";
+                            "on m.movie_id = d.movie_id";
                     rs = smt.executeQuery(sql);
                     break;
                 case 8:
-                    sql = "select ss.id as id, ss.title, ss.yearReleased from " +
-                            "(select id, title, yearReleased from db.movie m join db.directedby db on m.id = db.movie_id " +
-                            "where director_id in (select id from db.director where fname = 'James' and lname = 'Cameron')) ss " +
-                            "where ss.id in " +
+                    sql = "select ss.movie_id as id, ss.title, ss.yearReleased from " +
+                            "(select m.movie_id, title, yearReleased from db.movie m join db.directedby db on m.movie_id = db.movie_id " +
+                            "where director_id in (select director_id from db.director where fname = 'James' and lname = 'Cameron')) ss " +
+                            "where ss.movie_id in " +
                             "(select movie_id from db.directedby " +
                             "group by movie_id " +
                             "having count(director_id)=1)";
                     rs = smt.executeQuery(sql);
                     break;
                 case 9:
-                    sql = "select c.id, c.title, c.yearReleased, movieCount from (" +
-                            "select m.id,m.title,m.yearReleased, count(*) as movieCount from db.movie m " +
-                            "join db.roles r on r.movie_id = m.id " +
-                            "join db.actor a on a.id = r.actor_id " +
-                            "where a.id in (" +
-                            "select b.id from (select a.id, a.fname,a.lname, count(*) as cnt from db.Actor a " +
-                            "join db.roles r on r.actor_id = a.id " +
-                            "group by a.id,a.fname,a.lname) b " +
+                    sql = "select c.movie_id, c.title, c.yearReleased, movieCount from (" +
+                            "select m.movie_id,m.title,m.yearReleased, count(*) as movieCount from db.movie m " +
+                            "join db.roles r on r.movie_id = m.movie_id " +
+                            "join db.actor a on a.actor_id = r.actor_id " +
+                            "where a.actor_id in (" +
+                            "select b.actor_id from (select a.actor_id, a.fname,a.lname, count(*) as cnt from db.Actor a " +
+                            "join db.roles r on r.actor_id = a.actor_id " +
+                            "group by a.actor_id,a.fname,a.lname) b " +
                             "where b.cnt > 5) " +
-                            "group by m.title, m.id,m.yearReleased " +
+                            "group by m.title, m.movie_id,m.yearReleased " +
                             ") c " +
                             "where movieCount >= 2 " +
-                            "order by c.id";
+                            "order by c.movie_id";
                     rs = smt.executeQuery(sql);
                     break;
                 case 10:
-                    sql = "SELECT m.id,m.title,m.yearReleased FROM db.Movie m " +
-                            "JOIN db.MovieGenres mg on mg.movie_id = m.id " +
-                            "JOIN db.Genre g on g.id = mg.genre_id WHERE g.genre = 'Action'";
+                    sql = "SELECT m.movie_id,m.title,m.yearReleased FROM db.Movie m " +
+                            "JOIN db.MovieGenres mg on mg.movie_id = m.movie_id " +
+                            "JOIN db.Genre g on g.genre_id = mg.genre_id WHERE g.genre = 'Action'";
                     rs = smt.executeQuery(sql);
                     break;
             }

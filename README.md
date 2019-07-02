@@ -10,7 +10,9 @@ Implementation of algorithm provided by Adriane Chapman and H. V. Jagadish. 2009
     Go to https://dev.mysql.com/downloads/installer/ to install MySQL
 
 2. Run *DataExport.sql* to create smallmovies database & insert data
+
     [DataInsert.sql is old version - in order to use this version, queries will have to be adjusted for old table structure.]
+
     **Note**: Different versions of mysql may have different syntax for running certain commands
 
     *Recommended way to run this is by opening in MySQL Workbench and running.*
