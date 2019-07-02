@@ -43,7 +43,6 @@ public class NedExplain {
         // 4. Run Algorithm
         for (int i = 0; i<tabQ.size(); i++) {
             Tab m = tabQ.get(i);
-            System.out.println(m.name);
             if (checkEarlyTermination(i,m)) {
                 return getDetailedAnswer();
             }
@@ -55,11 +54,10 @@ public class NedExplain {
                 }
             }
 
-
             tabQ.get(child_index).input.addAll(m.output);
-            if (m.output == null) {
+            if (m.output.size() == 0) {
                 emptyOutput.add(m.name);
-                if (m.compatibles != null) {
+                if (m.compatibles.size() != 0) {
                     AnswerTuple at = new AnswerTuple(m.name,m.compatibles);
                     pickyManip.add(at);
                 }
@@ -67,8 +65,8 @@ public class NedExplain {
             if (!m.name.getRelTypeName().equals("JdbcTableScan")) {
                 tabQ.get(child_index).compatibles.addAll(findSuccessors(m, unpicked));
             } else {
-                if (m.compatibles != null) {
-                    tabQ.get(child_index).compatibles.addAll(findSuccessors(m, unpicked));
+                if (m.compatibles.size() != 0) {
+                    tabQ.get(child_index).compatibles.addAll(m.compatibles);
                     nonPickyManip.add(m.name);
                 }
             }
@@ -114,16 +112,18 @@ public class NedExplain {
                     System.out.print("(");
                     System.out.print(ans);
                     System.out.print("," + answer.getDetailed().get(ans));
-                    System.out.println(")");
+                    System.out.print(")");
                     isFirst = false;
                 } else {
-                    System.out.print(", (");
+                    System.out.println(", ");
+                    System.out.print("(");
                     System.out.print(ans);
                     System.out.print("," + answer.getDetailed().get(ans));
-                    System.out.println(")");
+                    System.out.print(")");
                 }
             }
         }
+        System.out.println();
         System.out.println("}");
 
         System.out.println("----------Condensed Answer:----------");
@@ -181,12 +181,28 @@ public class NedExplain {
             }
             for (HashMap<String,Object> tuple : inDirTc) {
                 if (o.entrySet().containsAll(tuple.entrySet())) {
-                    successors.add(o);
+                    if (!successors.contains(o)) {
+                        successors.add(o);
+                    }
                 }
             }
         }
-        List<HashMap<String,Object>> blocked = new ArrayList<>(m.compatibles);
-        blocked.removeAll(successors);
+
+        // check for compatibles that are not listed as successors
+        // these become the blocked tuples
+        List<HashMap<String,Object>> blocked = new ArrayList<>();
+        boolean blockedTuple = false;
+        for (HashMap<String,Object> obj : m.compatibles) {
+            for (HashMap<String,Object> s : successors) {
+               if (s.entrySet().containsAll(obj.entrySet())) {
+                   blockedTuple = true;
+               }
+            }
+            if (!blockedTuple) {
+                blocked.add(obj);
+            }
+        }
+
         if (successors.size() != 0) {
             nonPickyManip.add(m.name);
         }
@@ -214,10 +230,6 @@ public class NedExplain {
             }
         }
 
-        for (HashMap<String,Object> item : dirTc) {
-            System.out.println(item);
-        }
-
         inDirTc = new ArrayList<>();
 
     }
@@ -228,6 +240,7 @@ public class NedExplain {
     private void computeCompatibles() {
         for (Tab m: tabQ) {
             if (m.name.getRelTypeName().equals("JdbcTableScan")) {
+
                 for (HashMap<String,Object> tuple : m.input) {
                     for (HashMap<String,Object> compatible : dirTc) {
                         if (tuple.entrySet().containsAll(compatible.entrySet())) {
@@ -435,9 +448,9 @@ public class NedExplain {
         NedExplain ne = new NedExplain();
         ne.conn = new DatabaseConnection();
         ne.conn.createConnection();
-        String sql = "select m.id,m.title,m.yearReleased from db.Movie m " +
-                "left join db.MovieGenres mg on m.id = mg.movie_id " +
-                "left join db.Genre g on g.id = mg.genre_id where m.id in " +
+        String sql = "select m.movie_id,m.title,m.yearReleased from db.Movie m " +
+                "left join db.MovieGenres mg on m.movie_id = mg.movie_id " +
+                "left join db.Genre g on g.genre_id = mg.genre_id where m.movie_id in " +
                 "(select movie_id from db.DirectedBy group by movie_id " +
                 "having count(director_id)>=2) and g.genre = 'Action'";
 
@@ -447,7 +460,6 @@ public class NedExplain {
         ConditionalTuple ct = new ConditionalTuple();
         ct.addVTuple("Movie.title", "Titanic");
         ct.addVTuple("Movie.yearReleased",1997);
-        //ct.addVTuple("Director.lname","Lasseter");
        // ct.addCondition("ap",">", 25);
         predicate.add(ct);
         /***** Not ready for this yet *****/
