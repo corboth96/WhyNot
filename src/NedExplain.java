@@ -491,9 +491,16 @@ public class NedExplain {
         ConditionalTuple ct = new ConditionalTuple();
         ct.addVTuple("Movie.title", "Aladdin");
         predicate.add(ct);
-
+        ConditionalTuple ct2 = new ConditionalTuple();
+        ct2.addVTuple("Movie.title","Titanic");
+        ct2.addVTuple("Movie.yearReleased",1997);
+        //List<String> tables = new ArrayList<>();
+       // tables.add("Movie");
+        predicate.add(ct2);
         for (ConditionalTuple tc : predicate) {
+            //ne.compatibleFinder(tables,tc);
             ne.runNedExplain(sql,tc);
+            System.out.println();
         }
 
 
