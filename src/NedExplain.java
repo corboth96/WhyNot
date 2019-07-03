@@ -218,6 +218,7 @@ public class NedExplain {
             nonPickyManip.add(m.name);
         }
         if (blocked.size() != 0) {
+            System.out.println("WE ARE HERE");
             AnswerTuple at = new AnswerTuple(m.name,blocked);
             pickyManip.add(at);
         }
@@ -487,7 +488,7 @@ public class NedExplain {
                 "(select movie_id from db.DirectedBy group by movie_id " +
                 "having count(director_id)>=2) and g.genre = 'Action'";
 
-        List<ConditionalTuple> predicate = new ArrayList<>();
+       /* List<ConditionalTuple> predicate = new ArrayList<>();
         ConditionalTuple ct = new ConditionalTuple();
         ct.addVTuple("Movie.title", "Aladdin");
         predicate.add(ct);
@@ -498,6 +499,27 @@ public class NedExplain {
        // tables.add("Movie");
         predicate.add(ct2);
         for (ConditionalTuple tc : predicate) {
+            //ne.compatibleFinder(tables,tc);
+            ne.runNedExplain(sql,tc);
+            System.out.println();
+        }*/
+
+        sql = "select * from " +
+                "(select m.movie_id, title, yearReleased from db.movie m join db.roles r on m.movie_id = r.movie_id where r.actor_id in " +
+                "(select actor_id from db.actor where fname = 'Leonardo' and lname = 'DiCaprio')) a " +
+                "inner join \n" +
+                "(select m.movie_id, count(*) from db.movie m " +
+                "left join db.roles mg on mg.movie_id = m.movie_id " +
+                "group by m.movie_id having count(*) > 15) b " +
+                "on a.movie_id = b.movie_id";
+
+        List<ConditionalTuple> predicate2 = new ArrayList<>();
+        ConditionalTuple ct3 = new ConditionalTuple();
+        ct3.addVTuple("Movie.title", "Romeo + Juliet");
+        ct3.addVTuple("actors","x1");
+        ct3.addCondition("x1",">",10);
+        predicate2.add(ct3);
+        for (ConditionalTuple tc : predicate2) {
             //ne.compatibleFinder(tables,tc);
             ne.runNedExplain(sql,tc);
             System.out.println();
