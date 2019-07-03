@@ -20,7 +20,7 @@ import java.util.*;
  * Date Created: June 24, 2019
  */
 public class NedExplain {
-    DatabaseConnection conn;
+    private DatabaseConnection conn;
     private List<Tab> tabQ;
     private List<RelNode> nonPickyManip;
     private List<AnswerTuple> pickyManip;
@@ -29,16 +29,23 @@ public class NedExplain {
     private List<HashMap<String,Object>> dirTc;
     private List<HashMap<String,Object>> inDirTc;
 
-    public String runNedExplain(String sql, ConditionalTuple unpicked) {
+    /**
+     * NedExplain algorithm
+     * @param sql - query we are looking for data item in
+     * @param unpicked - unpicked item we are looking for
+     * @return true/false if finished
+     */
+    public boolean runNedExplain(String sql, ConditionalTuple unpicked) {
+        List<String> tables = generateTABQ(sql);
         // 1. Compatible Finder
-        compatibleFinder(unpicked);
+        compatibleFinder(tables, unpicked);
         // 2. Canonicalize
 
         // 3. Initializations
-        generateTABQ(sql,conn,unpicked);
         emptyOutput = new ArrayList<>();
         pickyManip = new ArrayList<>();
         nonPickyManip = new ArrayList<>();
+        computeCompatibles(unpicked);
 
         // 4. Run Algorithm
         for (int i = 0; i<tabQ.size(); i++) {
@@ -63,7 +70,7 @@ public class NedExplain {
                 }
             }
             if (!m.name.getRelTypeName().equals("JdbcTableScan")) {
-                tabQ.get(child_index).compatibles.addAll(findSuccessors(m, unpicked));
+                tabQ.get(child_index).compatibles.addAll(findSuccessors(m));
             } else {
                 if (m.compatibles.size() != 0) {
                     tabQ.get(child_index).compatibles.addAll(m.compatibles);
@@ -72,7 +79,7 @@ public class NedExplain {
             }
 
         }
-        return null;
+        return false;
     }
 
     /**
@@ -102,7 +109,11 @@ public class NedExplain {
         return true;
     }
 
-    private String getDetailedAnswer() {
+    /**
+     * Helper function to print out detailed, condensed and secondary answers
+     * @return always true
+     */
+    private boolean getDetailedAnswer() {
         System.out.println("----------Detailed Answer:----------");
         System.out.println("{");
         boolean isFirst = true;
@@ -153,7 +164,7 @@ public class NedExplain {
         System.out.println(")");
 
 
-        return "NONE";
+        return true;
     }
 
     /**
@@ -171,12 +182,12 @@ public class NedExplain {
      * @param m manipulation
      * @return tuples that match
      */
-    private List<HashMap<String,Object>> findSuccessors(Tab m, ConditionalTuple tc) {
+    private List<HashMap<String,Object>> findSuccessors(Tab m) {
         List<HashMap<String,Object>> successors = new ArrayList<>();
         for (HashMap<String,Object> o : m.output) {
             for (HashMap<String,Object> tuple : dirTc) {
                 if (o.entrySet().containsAll(tuple.entrySet())) {
-                    successors.add(o);
+                    successors.add(tuple);
                 }
             }
             for (HashMap<String,Object> tuple : inDirTc) {
@@ -191,14 +202,14 @@ public class NedExplain {
         // check for compatibles that are not listed as successors
         // these become the blocked tuples
         List<HashMap<String,Object>> blocked = new ArrayList<>();
-        boolean blockedTuple = false;
+        boolean blockedTuple = true;
         for (HashMap<String,Object> obj : m.compatibles) {
             for (HashMap<String,Object> s : successors) {
-               if (s.entrySet().containsAll(obj.entrySet())) {
-                   blockedTuple = true;
-               }
+                if (s.entrySet().containsAll(obj.entrySet())) {
+                    blockedTuple = false;
+                }
             }
-            if (!blockedTuple) {
+            if (blockedTuple) {
                 blocked.add(obj);
             }
         }
@@ -214,37 +225,59 @@ public class NedExplain {
     }
 
 
-    private void compatibleFinder(ConditionalTuple tc) {
-        // TODO: indirect set
+    /**
+     * fill in direct and indirect compatible sets
+     * @param tables - list of tables involved in the query
+     * @param tc - conditional tuple we are looking for
+     */
+    private void compatibleFinder(List<String> tables, ConditionalTuple tc) {
         // Dirtc = match qualified named attributes
         // Indirtc = match all other attributes
         dirTc = new ArrayList<>();
         HashMap<String,HashMap<String,Object>> qualifieds = tc.getQualifiedAttributes();
         for (String table : qualifieds.keySet()) {
             String sql = "SELECT * from db."+table;
+            tables.remove(table);
             List<HashMap<String,Object>> results = runQuery(sql);
             for (HashMap<String,Object> tuple : results) {
                 if (tuple.entrySet().containsAll(qualifieds.get(table).entrySet())) {
-                    dirTc.add(tuple);
+                    for (String key: tuple.keySet()) {
+                        if (key.contains("id")) {
+                            HashMap<String,Object> id = new HashMap<>();
+                            id.put(key,tuple.get(key));
+                            dirTc.add(id);
+                        }
+                    }
                 }
             }
         }
 
         inDirTc = new ArrayList<>();
+        for (String table : tables) {
+            String sql = "SELECT * from db."+table;
+            for (HashMap<String,Object> res : runQuery(sql)) {
+                res.put("table",table);
+                inDirTc.add(res);
+            }
+        }
 
     }
 
     /**
      * Compatibility finder to initialize with first compatibles
+     * @param tc unpicked data item we are looking for
      */
-    private void computeCompatibles() {
+    private void computeCompatibles(ConditionalTuple tc) {
         for (Tab m: tabQ) {
             if (m.name.getRelTypeName().equals("JdbcTableScan")) {
-
                 for (HashMap<String,Object> tuple : m.input) {
                     for (HashMap<String,Object> compatible : dirTc) {
                         if (tuple.entrySet().containsAll(compatible.entrySet())) {
-                            m.compatibles.add(tuple);
+                            if (tc.getQualifiedAttributes().keySet().
+                                    contains(m.name.getTable().getQualifiedName().get(1))) {
+                                m.compatibles.add(compatible);
+                            }
+
                         }
                     }
                 }
@@ -252,7 +285,7 @@ public class NedExplain {
         }
 
         // testing output
-        System.out.println();
+        /*System.out.println();
         for (Tab aTabQ : tabQ) {
             System.out.print(aTabQ.name);
             System.out.print("\t" + aTabQ.level);
@@ -261,7 +294,7 @@ public class NedExplain {
             System.out.print("\t" + aTabQ.compatibles);
             System.out.println();
         }
-        System.out.println();
+        System.out.println();*/
 
     }
 
@@ -351,11 +384,10 @@ public class NedExplain {
     /**
      * Generate the initial table
      * @param sql - query to initialize table for
-     * @param conn - connection
      */
-    private void generateTABQ(String sql, DatabaseConnection conn, ConditionalTuple unpicked) {
+    private List<String> generateTABQ(String sql) {
+        tabQ = new ArrayList<>();
         try {
-            tabQ = new ArrayList<>();
             SchemaPlus schema = conn.cc.getRootSchema().getSubSchema("DB");
 
             Frameworks.ConfigBuilder cb = Frameworks.newConfigBuilder(
@@ -371,11 +403,11 @@ public class NedExplain {
 
             // Converts a SQL parse tree into a tree of relational expressions
             RelRoot relRoot = p.rel(validatedNode);
-            RelNode relNode = relRoot.rel;
+            RelNode relNode =  relRoot.rel;
 
+            List<String> tables = new ArrayList<>();
             HashMap<RelNode, Integer> levels = new HashMap<>();
             List<Tab> tabs = new ArrayList<>();
-
             RelVisitor rv = new RelVisitor() {
                 @Override
                 public void visit(RelNode node, int ordinal, RelNode parent) {
@@ -388,6 +420,7 @@ public class NedExplain {
                     levels.put(node,level);
                     Tab tab;
                     if (node.getRelTypeName().equals("JdbcTableScan")) {
+                        tables.add(node.getTable().getQualifiedName().get(1));
                         String tableScan = convertToSqlString(node);
                         tab = new Tab(runQuery(tableScan), level, node, parent);
                     } else {
@@ -410,7 +443,7 @@ public class NedExplain {
             rv.go(relNode);
 
             Collections.reverse(tabs);
-            List<Tab> tablist  = new ArrayList<Tab>();
+            List<Tab> tablist  = new ArrayList<>();
             tablist.add(tabs.get(0));
             LinkedList<Tab> q = new LinkedList<>(tablist);
             List<Tab> visited = new ArrayList<>();
@@ -436,12 +469,12 @@ public class NedExplain {
                     }
                 }
             }
-
-            computeCompatibles();
-        }
-        catch (SqlParseException | RelConversionException | ValidationException e) {
+            return tables;
+        } catch (SqlParseException|ValidationException|RelConversionException e) {
             e.printStackTrace();
         }
+
+        return null;
     }
 
     public static void main(String[] args) {
@@ -454,18 +487,12 @@ public class NedExplain {
                 "(select movie_id from db.DirectedBy group by movie_id " +
                 "having count(director_id)>=2) and g.genre = 'Action'";
 
-
-        // skipping qualified attributes for now
         List<ConditionalTuple> predicate = new ArrayList<>();
         ConditionalTuple ct = new ConditionalTuple();
-        ct.addVTuple("Movie.title", "Titanic");
-        ct.addVTuple("Movie.yearReleased",1997);
-       // ct.addCondition("ap",">", 25);
+        ct.addVTuple("Movie.title", "Aladdin");
         predicate.add(ct);
-        /***** Not ready for this yet *****/
+
         for (ConditionalTuple tc : predicate) {
-            //ne.compatibleFinder(tc);
-            //ne.generateTABQ(sql,ne.conn,tc);
             ne.runNedExplain(sql,tc);
         }
 
