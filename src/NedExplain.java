@@ -218,7 +218,6 @@ public class NedExplain {
             nonPickyManip.add(m.name);
         }
         if (blocked.size() != 0) {
-            System.out.println("WE ARE HERE");
             AnswerTuple at = new AnswerTuple(m.name,blocked);
             pickyManip.add(at);
         }
