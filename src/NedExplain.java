@@ -39,15 +39,14 @@ public class NedExplain {
         List<String> tables = generateTABQ(sql);
         // 1. Compatible Finder
         compatibleFinder(tables, unpicked);
-        // 2. Canonicalize
 
-        // 3. Initializations
+        // 2. Initializations
         emptyOutput = new ArrayList<>();
         pickyManip = new ArrayList<>();
         nonPickyManip = new ArrayList<>();
         computeCompatibles(unpicked);
 
-        // 4. Run Algorithm
+        // 3. Run Algorithm
         for (int i = 0; i<tabQ.size(); i++) {
             Tab m = tabQ.get(i);
             if (checkEarlyTermination(i,m)) {
@@ -487,21 +486,18 @@ public class NedExplain {
                 "(select movie_id from db.DirectedBy group by movie_id " +
                 "having count(director_id)>=2) and g.genre = 'Action'";
 
-       /* List<ConditionalTuple> predicate = new ArrayList<>();
+        List<ConditionalTuple> predicate = new ArrayList<>();
         ConditionalTuple ct = new ConditionalTuple();
         ct.addVTuple("Movie.title", "Aladdin");
         predicate.add(ct);
         ConditionalTuple ct2 = new ConditionalTuple();
         ct2.addVTuple("Movie.title","Titanic");
         ct2.addVTuple("Movie.yearReleased",1997);
-        //List<String> tables = new ArrayList<>();
-       // tables.add("Movie");
         predicate.add(ct2);
         for (ConditionalTuple tc : predicate) {
-            //ne.compatibleFinder(tables,tc);
             ne.runNedExplain(sql,tc);
             System.out.println();
-        }*/
+        }
 
         sql = "select * from " +
                 "(select m.movie_id, title, yearReleased from db.movie m join db.roles r on m.movie_id = r.movie_id where r.actor_id in " +
@@ -519,11 +515,9 @@ public class NedExplain {
         ct3.addCondition("x1",">",10);
         predicate2.add(ct3);
         for (ConditionalTuple tc : predicate2) {
-            //ne.compatibleFinder(tables,tc);
             ne.runNedExplain(sql,tc);
             System.out.println();
         }
-
 
 
         ne.conn.closeConnection();
