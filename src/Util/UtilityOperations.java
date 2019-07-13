@@ -1,3 +1,5 @@
+package Util;
+
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.logical.LogicalJoin;
@@ -64,7 +66,7 @@ public class UtilityOperations {
         Statement smt;
         List<HashMap<String,Object>> tuples = new ArrayList<>();
         try {
-            smt = conn.con.createStatement();
+            smt = conn.createStatement();
             ResultSet rs = smt.executeQuery(sql);
 
             List<String> columns = new ArrayList<>();

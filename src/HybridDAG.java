@@ -1,4 +1,4 @@
-import org.apache.calcite.adapter.java.Array;
+import Util.*;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
@@ -8,7 +8,6 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.tools.*;
 
-import java.sql.Connection;
 import java.util.*;
 
 /**

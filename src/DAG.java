@@ -1,8 +1,7 @@
-import org.apache.calcite.plan.RelOptUtil;
+import Util.*;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
-import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
@@ -96,7 +95,6 @@ public class DAG {
             }
             System.out.println();
             */
-
         }
         catch (SqlParseException | RelConversionException | ValidationException e) {
             e.printStackTrace();

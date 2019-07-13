@@ -1,3 +1,5 @@
+package Util;
+
 import org.apache.calcite.adapter.jdbc.JdbcSchema;
 import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.schema.SchemaPlus;
@@ -6,6 +8,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 
 /**
@@ -15,8 +18,8 @@ import java.util.Properties;
  * Created June 5, 2019
  */
 public class DatabaseConnection {
-    Connection con;
-    CalciteConnection cc = null;
+    private Connection con;
+    public CalciteConnection cc = null;
 
 
     public Connection createConnection() {
@@ -40,6 +43,16 @@ public class DatabaseConnection {
             ex.printStackTrace();
         }
         return con;
+    }
+
+    public Statement createStatement() {
+        Statement smt = null;
+        try {
+            smt = con.createStatement();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return smt;
     }
 
     public void closeConnection() {

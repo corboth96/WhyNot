@@ -1,17 +1,17 @@
-import org.apache.calcite.adapter.java.Array;
+package Util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 /**
- * ConditionalTuple class
+ * Util.ConditionalTuple class
  * @author Corie
  * Date Created: June 24, 2019
  */
 public class ConditionalTuple {
-    HashMap<String,Object> vtuple;
-    List<Condition> conditions;
+    private HashMap<String,Object> vtuple;
+    private List<Condition> conditions;
 
     /**
      * initialize hash map and list

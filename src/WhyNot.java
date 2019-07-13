@@ -1,9 +1,5 @@
+import Util.*;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Filter;
-import org.apache.calcite.rel.logical.LogicalJoin;
-import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
-import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.SqlNode;
 
 import java.sql.*;
 import java.util.*;
@@ -130,7 +126,7 @@ public class WhyNot {
     private boolean successorExists(RelNode queryNode, HashMap.Entry<String,String> unpicked) {
         Statement smt;
         try {
-            smt = conn.con.createStatement();
+            smt = conn.createStatement();
             smt.setQueryTimeout(60);
             String query = ops.convertToSqlString(queryNode);
 

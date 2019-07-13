@@ -1,4 +1,3 @@
-import com.sun.org.apache.regexp.internal.RE;
 import org.apache.calcite.rel.RelNode;
 
 import java.util.ArrayList;
