@@ -21,6 +21,7 @@ import java.util.*;
  */
 public class NedExplain {
     private DatabaseConnection conn;
+    private UtilityOperations ops;
     private List<Tab> tabQ;
     private List<RelNode> nonPickyManip;
     private List<AnswerTuple> pickyManip;
@@ -29,13 +30,25 @@ public class NedExplain {
     private List<HashMap<String,Object>> dirTc;
     private List<HashMap<String,Object>> inDirTc;
 
+    public NedExplain(DatabaseConnection conn) {
+        this.conn = conn;
+        this.ops = new UtilityOperations();
+    }
+
+    public void NedExplain_Run(String sql, List<ConditionalTuple> predicates) {
+        for (ConditionalTuple tc : predicates) {
+            String answer = runNedExplain(sql,tc);
+            System.out.println(answer);
+        }
+    }
+
     /**
      * NedExplain algorithm
      * @param sql - query we are looking for data item in
      * @param unpicked - unpicked item we are looking for
      * @return true/false if finished
      */
-    public boolean runNedExplain(String sql, ConditionalTuple unpicked) {
+    private String runNedExplain(String sql, ConditionalTuple unpicked) {
         List<String> tables = generateTABQ(sql);
         // 1. Compatible Finder
         compatibleFinder(tables, unpicked);
@@ -50,7 +63,7 @@ public class NedExplain {
         for (int i = 0; i<tabQ.size(); i++) {
             Tab m = tabQ.get(i);
             if (checkEarlyTermination(i,m)) {
-                return getDetailedAnswer();
+                return ops.getDetailedAnswer(pickyManip,emptyOutput);
             }
             m.output = applyManipulation(m);
             int child_index = -1;
@@ -78,7 +91,7 @@ public class NedExplain {
             }
 
         }
-        return false;
+        return ops.getDetailedAnswer(pickyManip,emptyOutput);
     }
 
     /**
@@ -109,71 +122,13 @@ public class NedExplain {
     }
 
     /**
-     * Helper function to print out detailed, condensed and secondary answers
-     * @return always true
-     */
-    private boolean getDetailedAnswer() {
-        System.out.println("----------Detailed Answer:----------");
-        System.out.println("{");
-        boolean isFirst = true;
-        for (AnswerTuple answer : pickyManip) {
-            for (HashMap<String,Object> ans : answer.getDetailed().keySet()) {
-                if (isFirst) {
-                    System.out.print("(");
-                    System.out.print(ans);
-                    System.out.print("," + answer.getDetailed().get(ans));
-                    System.out.print(")");
-                    isFirst = false;
-                } else {
-                    System.out.println(", ");
-                    System.out.print("(");
-                    System.out.print(ans);
-                    System.out.print("," + answer.getDetailed().get(ans));
-                    System.out.print(")");
-                }
-            }
-        }
-        System.out.println();
-        System.out.println("}");
-
-        System.out.println("----------Condensed Answer:----------");
-        System.out.print("{");
-        isFirst = true;
-        for (AnswerTuple answer : pickyManip) {
-            if (isFirst) {
-                System.out.print(answer.manipulation);
-                isFirst = false;
-            } else {
-                System.out.print(", "+answer.manipulation);
-            }
-        }
-        System.out.println("}");
-
-        System.out.println("----------Secondary Answer:----------");
-        System.out.print("(");
-        isFirst = true;
-        for (RelNode m : emptyOutput) {
-            if (isFirst) {
-                System.out.print(m);
-                isFirst = false;
-            } else {
-                System.out.print(", "+m);
-            }
-        }
-        System.out.println(")");
-
-
-        return true;
-    }
-
-    /**
      * Get result of manipulation
      * @param m - manipulation to apply
      * @return list of result tuples
      */
     private List<HashMap<String, Object>> applyManipulation(Tab m) {
-        String query = convertToSqlString(m.name);
-        return runQuery(query);
+        String query = ops.convertToSqlString(m.name);
+        return ops.runQuery(conn,query);
     }
 
     /**
@@ -237,7 +192,7 @@ public class NedExplain {
         for (String table : qualifieds.keySet()) {
             String sql = "SELECT * from db."+table;
             tables.remove(table);
-            List<HashMap<String,Object>> results = runQuery(sql);
+            List<HashMap<String,Object>> results = ops.runQuery(conn,sql);
             for (HashMap<String,Object> tuple : results) {
                 if (tuple.entrySet().containsAll(qualifieds.get(table).entrySet())) {
                     for (String key: tuple.keySet()) {
@@ -254,7 +209,7 @@ public class NedExplain {
         inDirTc = new ArrayList<>();
         for (String table : tables) {
             String sql = "SELECT * from db."+table;
-            for (HashMap<String,Object> res : runQuery(sql)) {
+            for (HashMap<String,Object> res : ops.runQuery(conn,sql)) {
                 res.put("table",table);
                 inDirTc.add(res);
             }
@@ -282,102 +237,6 @@ public class NedExplain {
                 }
             }
         }
-
-        // testing output
-        /*System.out.println();
-        for (Tab aTabQ : tabQ) {
-            System.out.print(aTabQ.name);
-            System.out.print("\t" + aTabQ.level);
-            System.out.print("\t" + aTabQ.child);
-            System.out.print("\t" + aTabQ.input.size());
-            System.out.print("\t" + aTabQ.compatibles);
-            System.out.println();
-        }
-        System.out.println();*/
-
-    }
-
-    /**
-     * Helper function to run query and save tuples
-     * @param sql - query to run
-     * @return list of tuples from that query
-     */
-    private List<HashMap<String,Object>> runQuery(String sql) {
-        Statement smt;
-        List<HashMap<String,Object>> tuples = new ArrayList<>();
-        try {
-            smt = conn.con.createStatement();
-            ResultSet rs = smt.executeQuery(sql);
-
-            List<String> columns = new ArrayList<>();
-            List<String> colTypes = new ArrayList<>();
-            for (int i = 1; i<=rs.getMetaData().getColumnCount();i++) {
-                columns.add(rs.getMetaData().getColumnName(i));
-                colTypes.add(rs.getMetaData().getColumnTypeName(i));
-            }
-
-            while (rs.next()) {
-                HashMap<String,Object> tuple = new HashMap<>();
-                for (int i = 0; i<columns.size();i++) {
-                    Object col;
-                    switch (colTypes.get(i)) {
-                        case "INTEGER":
-                            col = rs.getInt(i + 1);
-                            break;
-                        case "DATE":
-                            col = rs.getDate(i + 1);
-                            break;
-                        case "TIME":
-                            col = rs.getTime(i + 1);
-                            break;
-                        case "LONG":
-                            col = rs.getLong(i + 1);
-                            break;
-                        case "FLOAT":
-                            col = rs.getFloat(i + 1);
-                            break;
-                        case "DOUBLE":
-                            col = rs.getDouble(i + 1);
-                            break;
-                        case "BOOLEAN":
-                            col = rs.getBoolean(i + 1);
-                            break;
-                        case "DECIMAL":
-                            col = rs.getBigDecimal(i + 1);
-                            break;
-                        case "TIMESTAMP":
-                            col = rs.getTimestamp(i + 1);
-                            break;
-                        default:
-                            col = rs.getString(i + 1);
-                    }
-                    tuple.put(columns.get(i), col);
-                }
-                tuples.add(tuple);
-            }
-            rs.close();
-            smt.close();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        return tuples;
-    }
-
-
-    /**
-     * Helper function to convert RelNode into SQL string to run
-     * @param query relnode to convert
-     * @return sql string to run
-     */
-    private String convertToSqlString(RelNode query) {
-        SqlDialect.Context c = SqlDialect.EMPTY_CONTEXT.withDatabaseProductName(
-                SqlDialect.DatabaseProduct.MYSQL.name()).withDatabaseProduct(SqlDialect.DatabaseProduct.MYSQL);
-        SqlDialect dialect = new SqlDialect(c);
-        RelToSqlConverter relToSqlConverter = new RelToSqlConverter(dialect);
-        RelToSqlConverter.Result res;
-        res = relToSqlConverter.visitChild(0,query);
-        SqlNode newNode = res.asSelect();
-        return newNode.toSqlString(dialect,false).getSql();
     }
 
     /**
@@ -420,8 +279,8 @@ public class NedExplain {
                     Tab tab;
                     if (node.getRelTypeName().equals("JdbcTableScan")) {
                         tables.add(node.getTable().getQualifiedName().get(1));
-                        String tableScan = convertToSqlString(node);
-                        tab = new Tab(runQuery(tableScan), level, node, parent);
+                        String tableScan = ops.convertToSqlString(node);
+                        tab = new Tab(ops.runQuery(conn,tableScan), level, node, parent);
                     } else {
                         tab = new Tab(level, node, parent);
                     }
@@ -474,53 +333,6 @@ public class NedExplain {
         }
 
         return null;
-    }
-
-    public static void main(String[] args) {
-        NedExplain ne = new NedExplain();
-        ne.conn = new DatabaseConnection();
-        ne.conn.createConnection();
-        String sql = "select m.movie_id,m.title,m.yearReleased from db.Movie m " +
-                "left join db.MovieGenres mg on m.movie_id = mg.movie_id " +
-                "left join db.Genre g on g.genre_id = mg.genre_id where m.movie_id in " +
-                "(select movie_id from db.DirectedBy group by movie_id " +
-                "having count(director_id)>=2) and g.genre = 'Action'";
-
-        List<ConditionalTuple> predicate = new ArrayList<>();
-        ConditionalTuple ct = new ConditionalTuple();
-        ct.addVTuple("Movie.title", "Aladdin");
-        predicate.add(ct);
-        ConditionalTuple ct2 = new ConditionalTuple();
-        ct2.addVTuple("Movie.title","Titanic");
-        ct2.addVTuple("Movie.yearReleased",1997);
-        predicate.add(ct2);
-        for (ConditionalTuple tc : predicate) {
-            ne.runNedExplain(sql,tc);
-            System.out.println();
-        }
-
-        sql = "select * from " +
-                "(select m.movie_id, title, yearReleased from db.movie m join db.roles r on m.movie_id = r.movie_id where r.actor_id in " +
-                "(select actor_id from db.actor where fname = 'Leonardo' and lname = 'DiCaprio')) a " +
-                "inner join \n" +
-                "(select m.movie_id, count(*) from db.movie m " +
-                "left join db.roles mg on mg.movie_id = m.movie_id " +
-                "group by m.movie_id having count(*) > 15) b " +
-                "on a.movie_id = b.movie_id";
-
-        List<ConditionalTuple> predicate2 = new ArrayList<>();
-        ConditionalTuple ct3 = new ConditionalTuple();
-        ct3.addVTuple("Movie.title", "Romeo + Juliet");
-        ct3.addVTuple("actors","x1");
-        ct3.addCondition("x1",">",10);
-        predicate2.add(ct3);
-        for (ConditionalTuple tc : predicate2) {
-            ne.runNedExplain(sql,tc);
-            System.out.println();
-        }
-
-
-        ne.conn.closeConnection();
     }
 
 }

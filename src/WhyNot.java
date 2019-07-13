@@ -15,13 +15,25 @@ import java.util.*;
  * Created June 5, 2019
  */
 public class WhyNot {
-    static DatabaseConnection conn = null;
+    private DatabaseConnection conn;
+    private UtilityOperations ops;
 
+    /**
+     * Constructor to get database connection
+     * @param c - db connection
+     */
     public WhyNot(DatabaseConnection c) {
-        conn = c;
+        this.conn = c;
+        ops = new UtilityOperations();
     }
 
-    public void whyNot(String sql, Map.Entry<String,String> unpicked) {
+    public void whyNot_Run(String sql, HashMap<String, String> unpickeds) {
+        for (HashMap.Entry<String,String> e : unpickeds.entrySet()) {
+            whyNot(sql,e);
+        }
+    }
+
+    private void whyNot(String sql, Map.Entry<String,String> unpicked) {
         // generate all of the information we need for the algorithm
         DAG dag = new DAG();
         Map<RelNode,ArrayList<RelNode>> graph = dag.generateDAG(sql,conn);
@@ -35,10 +47,10 @@ public class WhyNot {
         System.out.println("-----Picky Manipulation(s)-----");
         for (RelNode n : picky) {
             System.out.print(n+": ");
-            System.out.println(convertManipulation(n));
+            System.out.println(ops.convertManipulation(n));
             System.out.println();
             System.out.println("SQL String: ");
-            System.out.println(convertToSqlString(n));
+            System.out.println(ops.convertToSqlString(n));
         }
     }
 
@@ -68,9 +80,6 @@ public class WhyNot {
             visited.put(r,true);
 
             boolean successorExists = successorExists(r,unpicked);
-            /*System.out.println("\t"+r);
-            System.out.println("\t"+successorExists);
-            System.out.println(parentCounts);*/
             if (successorExists) {
                 notPicky.add(r);
                 if (dag.get(r) != null) {
@@ -87,7 +96,6 @@ public class WhyNot {
                 possiblePicky.add(r);
             }
         }
-        //return testPost(dag,possiblePicky,notPicky);
         return postProcessPicky(dag,possiblePicky, notPicky);
     }
 
@@ -124,8 +132,7 @@ public class WhyNot {
         try {
             smt = conn.con.createStatement();
             smt.setQueryTimeout(60);
-            String query = convertToSqlString(queryNode);
-            //System.out.println(query);
+            String query = ops.convertToSqlString(queryNode);
 
             ResultSet rs = smt.executeQuery(query);
             ResultSetMetaData rsmd = rs.getMetaData();
@@ -155,47 +162,7 @@ public class WhyNot {
         return false;
     }
 
-    /**
-     * Helper function to convert RelNode into SQL string to run
-     * @param query relnode to convert
-     * @return sql string to run
-     */
-    private String convertToSqlString(RelNode query) {
-        SqlDialect.Context c = SqlDialect.EMPTY_CONTEXT.withDatabaseProductName(
-                SqlDialect.DatabaseProduct.MYSQL.name()).withDatabaseProduct(SqlDialect.DatabaseProduct.MYSQL);
-        SqlDialect dialect = new SqlDialect(c);
-        RelToSqlConverter relToSqlConverter = new RelToSqlConverter(dialect);
-        RelToSqlConverter.Result res;
-        res = relToSqlConverter.visitChild(0,query);
-        SqlNode newNode = res.asSelect();
-        return newNode.toSqlString(dialect,false).getSql();
-    }
 
-    private String convertManipulation(RelNode query) {
-        String cond = "";
-
-
-        SqlDialect.Context c = SqlDialect.EMPTY_CONTEXT.withDatabaseProductName(
-                SqlDialect.DatabaseProduct.MYSQL.name()).withDatabaseProduct(SqlDialect.DatabaseProduct.MYSQL);
-        SqlDialect dialect = new SqlDialect(c);
-        RelToSqlConverter relToSqlConverter = new RelToSqlConverter(dialect);
-        RelToSqlConverter.Result res;
-
-
-        if (query.getRelTypeName().equals("LogicalFilter")) {
-            Filter filter = (Filter) query;
-            cond = filter.getCondition().toString();
-
-            res = relToSqlConverter.visit(filter);
-            List<SqlNode> newNode = res.qualifiedContext().fieldList();
-            //System.out.println(res.asFrom().toSqlString(dialect).getSql());
-
-        } else if (query.getRelTypeName().equals("LogicalJoin")) {
-            LogicalJoin join = (LogicalJoin) query;
-            cond = join.getCondition().toString();
-        }
-        return cond;
-    }
 
     /**
      * Post process function to why not

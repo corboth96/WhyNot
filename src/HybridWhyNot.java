@@ -1,11 +1,4 @@
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
-import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.SqlNode;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 
 
@@ -17,6 +10,8 @@ import java.util.*;
  */
 public class HybridWhyNot {
     private DatabaseConnection conn;
+    private UtilityOperations ops;
+
     private List<HybridTab> hTabSorted;
     private List<RelNode> nonPickyManip;
     private List<AnswerTuple> pickyManip;
@@ -24,6 +19,18 @@ public class HybridWhyNot {
 
     private List<HashMap<String,Object>> dirTc;
     private List<HashMap<String,Object>> inDirTc;
+
+    public HybridWhyNot(DatabaseConnection conn) {
+        this.conn = conn;
+        ops = new UtilityOperations();
+    }
+
+    public void HybridWhyNot_Run(String sql, List<ConditionalTuple> predicates) {
+        for (ConditionalTuple tc : predicates) {
+            String answer = runWhyNot(sql,tc);
+            System.out.println(answer);
+        }
+    }
 
     private String runWhyNot(String sql, ConditionalTuple unpicked) {
         HybridDAG hDAG = new HybridDAG();
@@ -63,12 +70,12 @@ public class HybridWhyNot {
                 }
             }
         }
-        return getDetailedAnswer();
+        return ops.getDetailedAnswer(pickyManip, emptyOutput);
     }
 
 
     private boolean successorExists(HybridTab m) {
-        List<HashMap<String,Object>> output = runQuery(convertToSqlString(m.name));
+        List<HashMap<String,Object>> output = ops.runQuery(conn,ops.convertToSqlString(m.name));
 
         if (output.size() == 0) {
             emptyOutput.add(m.name);
@@ -161,7 +168,7 @@ public class HybridWhyNot {
         for (String table : qualifieds.keySet()) {
             String sql = "SELECT * from db."+table;
             tables.remove(table);
-            List<HashMap<String,Object>> results = runQuery(sql);
+            List<HashMap<String,Object>> results = ops.runQuery(conn,sql);
             for (HashMap<String,Object> tuple : results) {
                 if (tuple.entrySet().containsAll(qualifieds.get(table).entrySet())) {
                     for (String key: tuple.keySet()) {
@@ -178,7 +185,7 @@ public class HybridWhyNot {
         inDirTc = new ArrayList<>();
         for (String table : tables) {
             String sql = "SELECT * from db."+table;
-            for (HashMap<String,Object> res : runQuery(sql)) {
+            for (HashMap<String,Object> res : ops.runQuery(conn,sql)) {
                 res.put("table",table);
                 inDirTc.add(res);
             }
@@ -199,169 +206,6 @@ public class HybridWhyNot {
                     }
                 }
             }
-        }
-    }
-
-    /**
-     * Helper function to convert RelNode into SQL string to run
-     * @param query relnode to convert
-     * @return sql string to run
-     */
-    private String convertToSqlString(RelNode query) {
-        SqlDialect.Context c = SqlDialect.EMPTY_CONTEXT.withDatabaseProductName(
-                SqlDialect.DatabaseProduct.MYSQL.name()).withDatabaseProduct(SqlDialect.DatabaseProduct.MYSQL);
-        SqlDialect dialect = new SqlDialect(c);
-        RelToSqlConverter relToSqlConverter = new RelToSqlConverter(dialect);
-        RelToSqlConverter.Result res;
-        res = relToSqlConverter.visitChild(0,query);
-        SqlNode newNode = res.asSelect();
-        return newNode.toSqlString(dialect,false).getSql();
-    }
-
-    /**
-     * Helper function to print out detailed, condensed and secondary answers
-     * @return always true
-     */
-   private String getDetailedAnswer() {
-        String answerString = "----------Detailed Answer:----------\n";
-        answerString += "{\n";
-        boolean isFirst = true;
-        for (AnswerTuple answer : pickyManip) {
-            for (HashMap<String,Object> ans : answer.getDetailed().keySet()) {
-                if (isFirst) {
-                    answerString += "(";
-                    answerString += ans;
-                    answerString += "," + answer.getDetailed().get(ans);
-                    answerString += ")";
-                    isFirst = false;
-                } else {
-                    answerString += ", \n";
-                    answerString += "(";
-                    answerString += ans;
-                    answerString += "," + answer.getDetailed().get(ans);
-                    answerString += ")";
-                }
-            }
-        }
-        answerString += "\n";
-        answerString += "}\n";
-
-        answerString += "----------Condensed Answer:----------\n";
-        answerString += "{";
-        isFirst = true;
-        for (AnswerTuple answer : pickyManip) {
-            if (isFirst) {
-                answerString += answer.manipulation;
-                isFirst = false;
-            } else {
-                answerString += ", "+answer.manipulation;
-            }
-        }
-        answerString += "}\n";
-
-        answerString += "----------Secondary Answer:----------\n";
-        answerString += "(";
-        isFirst = true;
-        for (RelNode m : emptyOutput) {
-            if (isFirst) {
-                answerString += m;
-                isFirst = false;
-            } else {
-                answerString += ", "+m;
-            }
-        }
-        answerString += ")\n";
-
-
-        return answerString;
-    }
-
-    /**
-     * Helper function to run query and save tuples
-     * @param sql - query to run
-     * @return list of tuples from that query
-     */
-    private List<HashMap<String,Object>> runQuery(String sql) {
-        Statement smt;
-        List<HashMap<String,Object>> tuples = new ArrayList<>();
-        try {
-            smt = conn.con.createStatement();
-            ResultSet rs = smt.executeQuery(sql);
-
-            List<String> columns = new ArrayList<>();
-            List<String> colTypes = new ArrayList<>();
-            for (int i = 1; i<=rs.getMetaData().getColumnCount();i++) {
-                columns.add(rs.getMetaData().getColumnName(i));
-                colTypes.add(rs.getMetaData().getColumnTypeName(i));
-            }
-
-            while (rs.next()) {
-                HashMap<String,Object> tuple = new HashMap<>();
-                for (int i = 0; i<columns.size();i++) {
-                    Object col;
-                    switch (colTypes.get(i)) {
-                        case "INTEGER":
-                            col = rs.getInt(i + 1);
-                            break;
-                        case "DATE":
-                            col = rs.getDate(i + 1);
-                            break;
-                        case "TIME":
-                            col = rs.getTime(i + 1);
-                            break;
-                        case "LONG":
-                            col = rs.getLong(i + 1);
-                            break;
-                        case "FLOAT":
-                            col = rs.getFloat(i + 1);
-                            break;
-                        case "DOUBLE":
-                            col = rs.getDouble(i + 1);
-                            break;
-                        case "BOOLEAN":
-                            col = rs.getBoolean(i + 1);
-                            break;
-                        case "DECIMAL":
-                            col = rs.getBigDecimal(i + 1);
-                            break;
-                        case "TIMESTAMP":
-                            col = rs.getTimestamp(i + 1);
-                            break;
-                        default:
-                            col = rs.getString(i + 1);
-                    }
-                    tuple.put(columns.get(i), col);
-                }
-                tuples.add(tuple);
-            }
-            rs.close();
-            smt.close();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        return tuples;
-    }
-
-    public static void main(String[] args) {
-        HybridWhyNot hwn = new HybridWhyNot();
-        hwn.conn = new DatabaseConnection();
-        hwn.conn.createConnection();
-
-        String sql = "select m.movie_id,m.title,m.yearReleased from db.Movie m " +
-                "left join db.MovieGenres mg on m.movie_id = mg.movie_id " +
-                "left join db.Genre g on g.genre_id = mg.genre_id where m.movie_id in " +
-                "(select movie_id from db.DirectedBy group by movie_id " +
-                "having count(director_id)>=2) and g.genre = 'Action'";
-
-        List<ConditionalTuple> predicate = new ArrayList<>();
-        ConditionalTuple ct = new ConditionalTuple();
-        ct.addVTuple("Movie.title", "Titanic");
-        List<String> tables = new ArrayList<>();
-        tables.add("Movie");
-        predicate.add(ct);
-        for (ConditionalTuple tc : predicate) {
-            String answer = hwn.runWhyNot(sql,tc);
-            System.out.println(answer);
         }
     }
 }
