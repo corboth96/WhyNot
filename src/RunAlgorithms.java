@@ -33,6 +33,7 @@ public class RunAlgorithms {
 
         System.out.println("---------------------------WhyNot---------------------------");
         whyNot.whyNot_Run(sql,unpickeds);
+        System.out.println();
 
         System.out.println("-------------------------NedExplain-------------------------");
         ne.NedExplain_Run(sql,predicates);

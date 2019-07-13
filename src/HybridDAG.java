@@ -19,7 +19,7 @@ public class HybridDAG {
     public Map<HybridTab, ArrayList<HybridTab>> generateDAG(String sql, DatabaseConnection conn) {
         Map<HybridTab, ArrayList<HybridTab>> dag = new HashMap<>();
         try {
-            SchemaPlus schema = conn.cc.getRootSchema().getSubSchema("DB");
+            SchemaPlus schema = conn.getCc().getRootSchema().getSubSchema("DB");
 
             Frameworks.ConfigBuilder cb = Frameworks.newConfigBuilder(
             ).defaultSchema(schema).parserConfig(SqlParser.configBuilder().setCaseSensitive(false).build());
@@ -194,22 +194,5 @@ public class HybridDAG {
             }
         }
         return counts;
-    }
-
-    public static void main(String[] args) {
-        HybridDAG d = new HybridDAG();
-        DatabaseConnection c = new DatabaseConnection();
-        c.createConnection();
-        String sql = "select m.movie_id,m.title,m.yearReleased from db.Movie m " +
-                "left join db.MovieGenres mg on m.movie_id = mg.movie_id " +
-                "left join db.Genre g on g.genre_id = mg.genre_id where m.movie_id in " +
-                "(select movie_id from db.DirectedBy group by movie_id " +
-                "having count(director_id)>=2) and g.genre = 'Action'";
-        Map<HybridTab, ArrayList<HybridTab>> dag = d.generateDAG(sql,c);
-        List<HybridTab> sorted = d.topologicalSort(dag);
-        List<HybridTab> roots = d.findRoots(dag);
-        for (HybridTab t : roots)
-            System.out.println(t.name);
-
     }
 }

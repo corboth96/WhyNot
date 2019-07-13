@@ -24,7 +24,7 @@ public class DAG {
     public Map<RelNode,ArrayList<RelNode>> generateDAG(String sql, DatabaseConnection conn) {
         Map<RelNode,ArrayList<RelNode>> dag = new HashMap<>();
         try {
-            SchemaPlus schema = conn.cc.getRootSchema().getSubSchema("DB");
+            SchemaPlus schema = conn.getCc().getRootSchema().getSubSchema("DB");
 
             Frameworks.ConfigBuilder cb = Frameworks.newConfigBuilder(
             ).defaultSchema(schema).parserConfig(SqlParser.configBuilder().setCaseSensitive(false).build());

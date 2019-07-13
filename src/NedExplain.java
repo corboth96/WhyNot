@@ -26,11 +26,20 @@ public class NedExplain {
     private List<HashMap<String,Object>> dirTc;
     private List<HashMap<String,Object>> inDirTc;
 
+    /**
+     * constructor
+     * @param conn - database connection
+     */
     public NedExplain(DatabaseConnection conn) {
         this.conn = conn;
         this.ops = new UtilityOperations();
     }
 
+    /**
+     * run function to be called by main
+     * @param sql query string
+     * @param predicates list of items we are looking for
+     */
     public void NedExplain_Run(String sql, List<ConditionalTuple> predicates) {
         for (ConditionalTuple tc : predicates) {
             String answer = runNedExplain(sql,tc);
@@ -242,7 +251,7 @@ public class NedExplain {
     private List<String> generateTABQ(String sql) {
         tabQ = new ArrayList<>();
         try {
-            SchemaPlus schema = conn.cc.getRootSchema().getSubSchema("DB");
+            SchemaPlus schema = conn.getCc().getRootSchema().getSubSchema("DB");
 
             Frameworks.ConfigBuilder cb = Frameworks.newConfigBuilder(
             ).defaultSchema(schema).parserConfig(SqlParser.configBuilder().setCaseSensitive(false).build());

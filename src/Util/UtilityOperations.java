@@ -156,10 +156,10 @@ public class UtilityOperations {
         isFirst = true;
         for (AnswerTuple answer : pickyManip) {
             if (isFirst) {
-                answerString += answer.manipulation;
+                answerString += answer.getManipulation();
                 isFirst = false;
             } else {
-                answerString += ", "+answer.manipulation;
+                answerString += ", "+answer.getManipulation();
             }
         }
         answerString += "}\n";

@@ -19,9 +19,12 @@ import java.util.Properties;
  */
 public class DatabaseConnection {
     private Connection con;
-    public CalciteConnection cc = null;
+    private CalciteConnection cc = null;
 
-
+    /**
+     * open database connection
+     * @return Connection
+     */
     public Connection createConnection() {
         String driverStr = "com.mysql.cj.jdbc.Driver";
         String url = "jdbc:mysql://127.0.0.1:3306/smallmovies?serverTimezone=EST";
@@ -38,13 +41,17 @@ public class DatabaseConnection {
             SchemaPlus rootSchema = cc.getRootSchema();
             DataSource ds = JdbcSchema.dataSource(url,driverStr,user,password);
             rootSchema.add("DB",JdbcSchema.create(rootSchema,"DB",ds,null,null));
-            System.out.println("connection established");
+            System.out.println("Connection Established");
         } catch (ClassNotFoundException|SQLException ex) {
             ex.printStackTrace();
         }
         return con;
     }
 
+    /**
+     * createStatement method to keep con private and still be able to createStatement
+     * @return Statement
+     */
     public Statement createStatement() {
         Statement smt = null;
         try {
@@ -55,6 +62,17 @@ public class DatabaseConnection {
         return smt;
     }
 
+    /**
+     * getter to get CalciteConnection
+     * @return CalciteConnection
+     */
+    public CalciteConnection getCc() {
+        return cc;
+    }
+
+    /**
+     * close database connection
+     */
     public void closeConnection() {
         try {
             con.close();

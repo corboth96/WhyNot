@@ -15,6 +15,12 @@ public class HybridTab {
     RelNode name;
     RelNode child;
 
+    /**
+     * constructor
+     * @param level - level in query
+     * @param name - Relnode
+     * @param child - subquery relnode
+     */
     public HybridTab(int level, RelNode name, RelNode child) {
         this.level = level;
         this.name = name;

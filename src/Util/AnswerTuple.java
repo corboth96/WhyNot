@@ -14,20 +14,35 @@ import java.util.List;
  * Date Created: Jun 28, 2019
  */
 public class AnswerTuple {
-    public RelNode manipulation;
-    private List<HashMap<String,Object>> tuples;
+    private  RelNode manipulation;
     private HashMap<HashMap<String,Object>, RelNode> reversed;
 
+    /**
+     * constructor
+     * @param manip -  causing data to not be returned
+     * @param compatibles - list of compatibles lost
+     */
     public AnswerTuple(RelNode manip, List<HashMap<String,Object>> compatibles) {
         this.manipulation = manip;
-        this.tuples = new ArrayList<>(compatibles);
         this.reversed = new HashMap<>();
         for (HashMap<String,Object> tuple : compatibles) {
             this.reversed.put(tuple,manip);
         }
     }
 
+    /**
+     * return the private reversed list of compatible and the manipulation that loses it
+     * @return hash map of hashmaps
+     */
     public HashMap<HashMap<String,Object>, RelNode> getDetailed() {
         return reversed;
+    }
+
+    /**
+     * getter for private manipulation
+     * @return the manipulation
+     */
+    public RelNode getManipulation() {
+        return manipulation;
     }
 }

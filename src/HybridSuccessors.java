@@ -13,6 +13,11 @@ public class HybridSuccessors {
     List<HashMap<String,Object>> successors;
     boolean returnType;
 
+    /**
+     * constructor
+     * @param s - the successors
+     * @param returnType - whether all compatibles were lost or not
+     */
     public HybridSuccessors(List<HashMap<String,Object>> s, boolean returnType) {
         this.successors = s;
         this.returnType = returnType;

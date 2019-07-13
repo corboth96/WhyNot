@@ -21,11 +21,20 @@ public class HybridWhyNot {
     private List<HashMap<String,Object>> dirTc;
     private List<HashMap<String,Object>> inDirTc;
 
+    /**
+     * constructor
+     * @param conn - database connection instance being passed around
+     */
     public HybridWhyNot(DatabaseConnection conn) {
         this.conn = conn;
         ops = new UtilityOperations();
     }
 
+    /**
+     * run function for main to call
+     * @param sql - query string
+     * @param predicates - items we are looking for
+     */
     public void HybridWhyNot_Run(String sql, List<ConditionalTuple> predicates) {
         for (ConditionalTuple tc : predicates) {
             String answer = runWhyNot(sql,tc);
@@ -33,6 +42,12 @@ public class HybridWhyNot {
         }
     }
 
+    /**
+     * main algorithm method that runs the algorithm
+     * @param sql - query string
+     * @param unpicked - one data item
+     * @return - detailed answer string
+     */
     private String runWhyNot(String sql, ConditionalTuple unpicked) {
         HybridDAG hDAG = new HybridDAG();
         Map<HybridTab, ArrayList<HybridTab>> dag = hDAG.generateDAG(sql,conn);
@@ -75,6 +90,11 @@ public class HybridWhyNot {
     }
 
 
+    /**
+     * function to determine if successors exist or not
+     * @param m - manipulation we are looking at
+     * @return true or false
+     */
     private boolean successorExists(HybridTab m) {
         List<HashMap<String,Object>> output = ops.runQuery(conn,ops.convertToSqlString(m.name));
 
@@ -110,6 +130,12 @@ public class HybridWhyNot {
         return true;
     }
 
+    /**
+     * Internal findSuccessors to keep tracing compatibles
+     * @param m - manipulation being investigated
+     * @param output - output list from running the manipulation
+     * @return HybridSuccessors: list of successors and true or false if picky or not
+     */
     private HybridSuccessors findSuccessors(HybridTab m, List<HashMap<String,Object>> output) {
         List<HashMap<String,Object>> successors = new ArrayList<>();
         for (HashMap<String,Object> o : output) {

@@ -23,12 +23,22 @@ public class WhyNot {
         ops = new UtilityOperations();
     }
 
+    /**
+     * run function for main method
+     * @param sql - query string
+     * @param unpickeds - items we are looking for
+     */
     public void whyNot_Run(String sql, HashMap<String, String> unpickeds) {
         for (HashMap.Entry<String,String> e : unpickeds.entrySet()) {
             whyNot(sql,e);
         }
     }
 
+    /**
+     * calls the main algorithm after initializing everything
+     * @param sql - query string
+     * @param unpicked - item we are looking for
+     */
     private void whyNot(String sql, Map.Entry<String,String> unpicked) {
         // generate all of the information we need for the algorithm
         DAG dag = new DAG();

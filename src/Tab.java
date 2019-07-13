@@ -15,12 +15,13 @@ public class Tab {
     RelNode child;
     RelNode name;
 
-    public Tab(List<HashMap<String,Object>> inputs, int level, RelNode name) {
-        this.level = level;
-        this.name = name;
-        this.input.addAll(inputs);
-    }
-
+    /**
+     * first constructor
+     * @param inputs - input list
+     * @param level - level in query
+     * @param name - name of manipulation
+     * @param child - next manipulation
+     */
     public Tab(List<HashMap<String,Object>> inputs, int level, RelNode name, RelNode child) {
         this.level = level;
         this.name = name;
@@ -28,6 +29,12 @@ public class Tab {
         this.child = child;
     }
 
+    /**
+     * second constructor
+     * @param level - level in query
+     * @param name - name of manipulation
+     * @param child - next manipulation
+     */
     public Tab(int level, RelNode name, RelNode child) {
         this.level = level;
         this.name = name;

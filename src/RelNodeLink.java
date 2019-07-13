@@ -9,6 +9,11 @@ public class RelNodeLink {
     RelNode entry;
     RelNode parent;
 
+    /**
+     * constructor
+     * @param entry = current manipulation
+     * @param parent = parent of this manipulation
+     */
     public RelNodeLink(RelNode entry, RelNode parent) {
         this.entry = entry;
         this.parent = parent;
