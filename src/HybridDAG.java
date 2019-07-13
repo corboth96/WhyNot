@@ -12,7 +12,9 @@ import java.sql.Connection;
 import java.util.*;
 
 /**
- * Created by Corie on 7/8/19.
+ * Hybrid DAG for WhyNot/NedExplain integrated implementation
+ * @author Corie Both
+ * Date Created: Jul 8, 2019
  */
 public class HybridDAG {
     public Map<HybridTab, ArrayList<HybridTab>> generateDAG(String sql, DatabaseConnection conn) {
@@ -40,7 +42,6 @@ public class HybridDAG {
             RelVisitor rv = new RelVisitor() {
                 @Override
                 public void visit(RelNode node, int ordinal, RelNode parent) {
-                    System.out.println(node);
                     int level;
                     if (parent == null) {
                         level = 0;
@@ -53,17 +54,7 @@ public class HybridDAG {
                     if (parent == null) {
                         dag.put(t,new ArrayList<>());
                     }
-                    /*else if (node.getRelTypeName().equals("JdbcTableScan")) {
-                        int nullLevel = level+1;
-                        HybridTab nullTab = new HybridTab(nullLevel,null,null);
-                        if (!dag.containsKey(nullTab)) {
-                            dag.put(nullTab,new ArrayList<>());
-                        }
-                        dag.get(nullTab).add(t);
-
-                    }*/
                     else {
-                        System.out.println("\tParent: " + parent);
                         HybridTab parentTab = null;
                         for (HybridTab tab : dag.keySet()) {
                             if (tab.name != null) {
@@ -78,7 +69,7 @@ public class HybridDAG {
                     }
 
                     if (node.getRelTypeName().equals("JdbcTableScan")) {
-                        int nullLevel = level+1;
+                        int nullLevel = levels.get(t.name)+1;
                         HybridTab nullTab = new HybridTab(nullLevel,null,null);
                         if (!dag.containsKey(nullTab)) {
                             dag.put(nullTab,new ArrayList<>());
@@ -156,6 +147,56 @@ public class HybridDAG {
         s.push(item);
     }
 
+    /**
+     * find the root node
+     * @param dag - directed acyclic graph
+     * @return list of root nodes
+     */
+    public List<HybridTab> findRoots(Map<HybridTab,ArrayList<HybridTab>> dag) {
+        List<HybridTab> roots = new ArrayList<>();
+        for (HybridTab name : dag.keySet()) {
+            if (name.name == null) {
+                roots.addAll(dag.get(name));
+            }
+        }
+        return roots;
+    }
+
+    public List<String> getTables(Map<HybridTab,ArrayList<HybridTab>> dag) {
+        List<String> tables = new ArrayList<>();
+        for (HybridTab name : dag.keySet()) {
+            if (name.name != null) {
+                if (name.name.getRelTypeName().equals("JdbcTableScan")) {
+                    String tablename = name.name.getTable().getQualifiedName().get(1);
+                    if (!tables.contains(tablename)) {
+                        tables.add(tablename);
+                    }
+                }
+            }
+        }
+        return tables;
+    }
+
+    /**
+     * Get parent count for each node
+     * @param dag directed acyclic graph of relnodes
+     * @return parent count map
+     */
+    public Map<RelNode,Integer> getParentCount(Map<HybridTab,ArrayList<HybridTab>> dag) {
+        Map<RelNode,Integer> counts = new HashMap<>();
+        for (HybridTab entry : dag.keySet()) {
+            for (HybridTab child : dag.get(entry)) {
+                if (!counts.containsKey(child.name)) {
+                    counts.put(child.name,0);
+                }
+                if (entry != null) {
+                    counts.replace(child.name, counts.get(child.name) + 1);
+                }
+            }
+        }
+        return counts;
+    }
+
     public static void main(String[] args) {
         HybridDAG d = new HybridDAG();
         DatabaseConnection c = new DatabaseConnection();
@@ -167,8 +208,9 @@ public class HybridDAG {
                 "having count(director_id)>=2) and g.genre = 'Action'";
         Map<HybridTab, ArrayList<HybridTab>> dag = d.generateDAG(sql,c);
         List<HybridTab> sorted = d.topologicalSort(dag);
-        for (HybridTab t : sorted) {
+        List<HybridTab> roots = d.findRoots(dag);
+        for (HybridTab t : roots)
             System.out.println(t.name);
-        }
+
     }
 }
