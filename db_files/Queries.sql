@@ -8,7 +8,7 @@ select movie_id, title, yearReleased from movie;
 # QUERY 1: Get movies made after 2000 and before 2018
 # Unpicked: The Beach
 # WHY? year = 2000 (Expand to >=)
-select * from movie
+select movie_id, title, yearReleased from movie
 where yearReleased<2018 and yearReleased>2000;
 
 # QUERY 2: Get movies that Kate Winslet and Leonardo DiCaprio acted in
@@ -16,9 +16,9 @@ where yearReleased<2018 and yearReleased>2000;
 # WHY? Leonardo Dicaprio is not in the cast
 select ss.movie_id, ss.title, ss.yearReleased from 
 (select m.movie_id, title, yearReleased from movie m join roles r on m.movie_id = r.movie_id
-where r.actor_id = (select actor_id from actor where fname = "Kate" and lname = "Winslet")) ss
+where r.actor_id in (select actor_id from actor where fname = "Kate" and lname = "Winslet")) ss
 inner join
-(select m.movie_id, title, yearReleased from movie m join roles r on m.movie_id = r.movie_id where r.actor_id = 
+(select m.movie_id, title, yearReleased from movie m join roles r on m.movie_id = r.movie_id where r.actor_id in 
 (select actor_id from actor where fname = "Leonardo" and lname = "DiCaprio")) jc
 on ss.movie_id = jc.movie_id;
 
