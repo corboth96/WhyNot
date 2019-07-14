@@ -13,7 +13,7 @@ import org.apache.calcite.tools.*;
 import java.util.*;
 
 /**
- * Hybrid WhyNot.DAG for WhyNot.WhyNot/NedExplain.NedExplain integrated implementation
+ * DAG for WhyNot/NedExplain integrated implementation
  * @author Corie Both
  * Date Created: Jul 8, 2019
  */
@@ -43,14 +43,14 @@ public class HybridDAG {
             RelVisitor rv = new RelVisitor() {
                 @Override
                 public void visit(RelNode node, int ordinal, RelNode parent) {
-                    int level;
+                    /*int level;
                     if (parent == null) {
                         level = 0;
                     } else {
                         level = levels.get(parent)+1;
                     }
-                    levels.put(node,level);
-                    HybridTab t = new HybridTab(level,node,parent);
+                    levels.put(node,level);*/
+                    HybridTab t = new HybridTab(node,parent);
 
                     if (parent == null) {
                         dag.put(t,new ArrayList<>());
@@ -70,8 +70,7 @@ public class HybridDAG {
                     }
 
                     if (node.getRelTypeName().equals("JdbcTableScan")) {
-                        int nullLevel = levels.get(t.name)+1;
-                        HybridTab nullTab = new HybridTab(nullLevel,null,null);
+                        HybridTab nullTab = new HybridTab(null,null);
                         if (!dag.containsKey(nullTab)) {
                             dag.put(nullTab,new ArrayList<>());
                         }

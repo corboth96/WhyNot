@@ -3,7 +3,6 @@ import NedExplain.NedExplain;
 import Util.*;
 import WhyNot.WhyNot;
 
-import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
