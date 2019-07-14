@@ -33,15 +33,37 @@ public class RunAlgorithms {
         HashMap<String,String> unpickeds = q.getUnpicked(input);
 
         System.out.println("---------------------------WhyNot---------------------------");
+        long start = System.currentTimeMillis();
+
         whyNot.whyNot_Run(sql,unpickeds);
-        System.out.println();
+
+        long finished = System.currentTimeMillis();
+        getTime(start, finished);
+
 
         System.out.println("-------------------------NedExplain-------------------------");
+        start = System.currentTimeMillis();
+
         ne.NedExplain_Run(sql,predicates);
 
+        finished = System.currentTimeMillis();
+        getTime(start,finished);
+
+
         System.out.println("---------------------------Hybrid---------------------------");
+        start = System.currentTimeMillis();
+
         hybridWhyNot.HybridWhyNot_Run(sql, predicates);
 
+        finished = System.currentTimeMillis();
+        getTime(start,finished);
+
         conn.closeConnection();
+    }
+
+    private static void getTime(long start, long finish) {
+        long timeElapsed = finish-start;
+        System.out.println("Time elapsed: " + timeElapsed + " milliseconds");
+        System.out.println();
     }
 }

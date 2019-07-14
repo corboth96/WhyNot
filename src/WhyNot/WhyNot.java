@@ -59,6 +59,7 @@ public class WhyNot {
             System.out.println();
             System.out.println("SQL String: ");
             System.out.println(ops.convertToSqlString(n));
+            System.out.println();
         }
     }
 
