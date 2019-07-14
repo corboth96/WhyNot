@@ -1,4 +1,7 @@
+import HybridWhyNot.HybridWhyNot;
+import NedExplain.NedExplain;
 import Util.*;
+import WhyNot.WhyNot;
 
 import java.sql.Connection;
 import java.util.HashMap;
@@ -13,7 +16,6 @@ import java.util.Scanner;
 public class RunAlgorithms {
     public static void main(String[] args) {
         DatabaseConnection conn = new DatabaseConnection();
-        Connection c = conn.createConnection();
 
         // initialize our 3 algorithms
         NedExplain ne = new NedExplain(conn);

@@ -1,3 +1,5 @@
+package WhyNot;
+
 import Util.*;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
@@ -11,7 +13,7 @@ import org.apache.calcite.tools.*;
 import java.util.*;
 
 /**
- * Class to work with generating the DAG and getting specific pieces of this dag
+ * Class to work with generating the WhyNot.DAG and getting specific pieces of this dag
  * @author Corie Both
  * Created Jun 5, 2019
  */
@@ -19,7 +21,7 @@ public class DAG {
     /**
      * create the dag by parsing the Apache Calcite parse tree
      * @param sql - query to parse
-     * @return DAG of queries from bottom up
+     * @return WhyNot.DAG of queries from bottom up
      */
     public Map<RelNode,ArrayList<RelNode>> generateDAG(String sql, DatabaseConnection conn) {
         Map<RelNode,ArrayList<RelNode>> dag = new HashMap<>();

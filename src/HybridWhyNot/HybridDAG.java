@@ -1,3 +1,5 @@
+package HybridWhyNot;
+
 import Util.*;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
@@ -11,7 +13,7 @@ import org.apache.calcite.tools.*;
 import java.util.*;
 
 /**
- * Hybrid DAG for WhyNot/NedExplain integrated implementation
+ * Hybrid WhyNot.DAG for WhyNot.WhyNot/NedExplain.NedExplain integrated implementation
  * @author Corie Both
  * Date Created: Jul 8, 2019
  */
@@ -136,7 +138,7 @@ public class HybridDAG {
      * @param item - item we are currently looking at
      */
     private void recursiveSort(Stack<HybridTab> s, Map<HybridTab,Boolean> visited,
-                               Map<HybridTab,ArrayList<HybridTab>> dag,HybridTab item ) {
+                               Map<HybridTab,ArrayList<HybridTab>> dag, HybridTab item ) {
         visited.replace(item,true);
         for (HybridTab node : dag.get(item)) {
             if (!visited.get(node)) {

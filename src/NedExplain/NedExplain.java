@@ -1,3 +1,5 @@
+package NedExplain;
+
 import Util.*;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
@@ -11,7 +13,7 @@ import org.apache.calcite.tools.*;
 import java.util.*;
 
 /**
- * NedExplain algorithm
+ * NedExplain.NedExplain algorithm
  * @author Corie Both
  * Date Created: June 24, 2019
  */
@@ -48,7 +50,7 @@ public class NedExplain {
     }
 
     /**
-     * NedExplain algorithm
+     * NedExplain.NedExplain algorithm
      * @param sql - query we are looking for data item in
      * @param unpicked - unpicked item we are looking for
      * @return true/false if finished

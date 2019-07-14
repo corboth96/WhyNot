@@ -1,3 +1,5 @@
+package Util;
+
 import Util.*;
 
 import java.util.ArrayList;
@@ -171,7 +173,7 @@ public class Queries {
     }
 
     /**
-     * get the predicate for NedExplain/HybridWhyNot
+     * get the predicate for NedExplain.NedExplain/HybridWhyNot.HybridWhyNot
      * @param caseN input number
      * @return list of conditional tuples
      */

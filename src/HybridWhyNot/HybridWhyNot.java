@@ -1,11 +1,13 @@
+package HybridWhyNot;
+
 import Util.*;
 import org.apache.calcite.rel.RelNode;
 import java.util.*;
 
 
 /**
- * Hybrid WhyNot/NedExplain implementation
- * Adds improvements from NedExplain into WhyNot
+ * Hybrid WhyNot.WhyNot/NedExplain.NedExplain implementation
+ * Adds improvements from NedExplain.NedExplain into WhyNot.WhyNot
  * @author Corie Both
  * Date Created: Jul 8, 2019
  */
@@ -134,7 +136,7 @@ public class HybridWhyNot {
      * Internal findSuccessors to keep tracing compatibles
      * @param m - manipulation being investigated
      * @param output - output list from running the manipulation
-     * @return HybridSuccessors: list of successors and true or false if picky or not
+     * @return HybridWhyNot.HybridWhyNot.HybridSuccessors: list of successors and true or false if picky or not
      */
     private HybridSuccessors findSuccessors(HybridTab m, List<HashMap<String,Object>> output) {
         List<HashMap<String,Object>> successors = new ArrayList<>();

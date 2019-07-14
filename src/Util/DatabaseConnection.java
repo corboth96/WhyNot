@@ -21,11 +21,15 @@ public class DatabaseConnection {
     private Connection con;
     private CalciteConnection cc = null;
 
+    public DatabaseConnection() {
+        createConnection();
+    }
+
     /**
      * open database connection
      * @return Connection
      */
-    public Connection createConnection() {
+    private Connection createConnection() {
         String driverStr = "com.mysql.cj.jdbc.Driver";
         String url = "jdbc:mysql://127.0.0.1:3306/smallmovies?serverTimezone=EST";
         String user = "corie";
