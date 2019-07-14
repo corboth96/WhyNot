@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Util.ConditionalTuple class
+ * ConditionalTuple class
  * @author Corie
  * Date Created: June 24, 2019
  */

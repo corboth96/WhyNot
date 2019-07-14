@@ -13,7 +13,7 @@ import org.apache.calcite.tools.*;
 import java.util.*;
 
 /**
- * Class to work with generating the WhyNot.DAG and getting specific pieces of this dag
+ * Class to work with generating the DAG and getting specific pieces of this dag
  * @author Corie Both
  * Created Jun 5, 2019
  */

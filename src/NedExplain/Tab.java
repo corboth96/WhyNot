@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * NedExplain.Tab class for making the TabQ instances
+ * Tab class for making the TabQ instances
  */
 public class Tab {
     List<HashMap<String,Object>> input = new ArrayList<>();

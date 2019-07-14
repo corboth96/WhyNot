@@ -13,7 +13,7 @@ import org.apache.calcite.tools.*;
 import java.util.*;
 
 /**
- * NedExplain.NedExplain algorithm
+ * NedExplain algorithm
  * @author Corie Both
  * Date Created: June 24, 2019
  */
@@ -50,7 +50,7 @@ public class NedExplain {
     }
 
     /**
-     * NedExplain.NedExplain algorithm
+     * NedExplain algorithm
      * @param sql - query we are looking for data item in
      * @param unpicked - unpicked item we are looking for
      * @return true/false if finished

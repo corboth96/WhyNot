@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Util.AnswerTuple class for defining a more detailed answer
+ * AnswerTuple class for defining a more detailed answer
  * Keep track of the manipulation & the tuples that are lost at that manipulation
  * Will allow us to better create the answers
  * @author Corie Both
