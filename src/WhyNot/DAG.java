@@ -90,20 +90,7 @@ public class DAG {
             }
             dag.put(null,notAllocated);
 
-            // now that DAG is initialized, write to file for inspection
-            try {
-                FileWriter visualizations =
-                        new FileWriter("/Users/Corie/Desktop/Summer_2019/Project/WhyNot/src/data_structures.txt");
-                visualizations.write("Why Not DAG:\n");
-                visualizations.write("------------------------\n");
-                for (HashMap.Entry e : dag.entrySet()) {
-                    visualizations.write(e.getKey()+ " -> "+e.getValue()+"\n");
-                }
-                visualizations.write("\n\n");
-                visualizations.close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+
         }
         catch (SqlParseException | RelConversionException | ValidationException e) {
             e.printStackTrace();

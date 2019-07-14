@@ -91,6 +91,7 @@ public class HybridWhyNot {
                 }
             }
         }
+        writeToFile(dag);
         return ops.getDetailedAnswer(pickyManip, emptyOutput);
     }
 
@@ -239,7 +240,9 @@ public class HybridWhyNot {
                 }
             }
         }
+    }
 
+    private void writeToFile(Map<HybridTab, ArrayList<HybridTab>> dag) {
         // now that we have all pieces of the HybridTab initialized, write to file to understand the graph
         try {
             FileWriter visualizations =

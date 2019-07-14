@@ -3,6 +3,8 @@ package WhyNot;
 import Util.*;
 import org.apache.calcite.rel.RelNode;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
@@ -52,6 +54,7 @@ public class WhyNot {
 
         List<RelNode> picky = traverseAndFindPicky(roots,graph,parentCounts,sorted,unpicked);
 
+        writeToFile(graph);
         System.out.println("-----Picky Manipulation(s)-----");
         for (RelNode n : picky) {
             System.out.print(n+": ");
@@ -206,5 +209,22 @@ public class WhyNot {
                 }
             }
         return finalList;
+    }
+
+    private void writeToFile(Map<RelNode,ArrayList<RelNode>> dag) {
+        // now that DAG is initialized, write to file for inspection
+        try {
+            FileWriter visualizations =
+                    new FileWriter("/Users/Corie/Desktop/Summer_2019/Project/WhyNot/src/data_structures.txt");
+            visualizations.write("Why Not DAG:\n");
+            visualizations.write("------------------------\n");
+            for (HashMap.Entry e : dag.entrySet()) {
+                visualizations.write(e.getKey()+ " -> "+e.getValue()+"\n");
+            }
+            visualizations.write("\n\n");
+            visualizations.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 }

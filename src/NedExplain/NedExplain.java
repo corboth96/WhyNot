@@ -72,6 +72,7 @@ public class NedExplain {
         for (int i = 0; i<tabQ.size(); i++) {
             Tab m = tabQ.get(i);
             if (checkEarlyTermination(i,m)) {
+                writeToFile();
                 return ops.getDetailedAnswer(pickyManip,emptyOutput);
             }
             m.output = applyManipulation(m);
@@ -100,6 +101,7 @@ public class NedExplain {
             }
 
         }
+        writeToFile();
         return ops.getDetailedAnswer(pickyManip,emptyOutput);
     }
 
@@ -246,27 +248,6 @@ public class NedExplain {
                 }
             }
         }
-
-        // table is fully initialized - write to file for inspection
-        try {
-            FileWriter visualizations =
-                    new FileWriter("/Users/Corie/Desktop/Summer_2019/Project/WhyNot/src/data_structures.txt",true);
-            visualizations.write("NedExplain Table:\n");
-            visualizations.write("------------------------\n");
-            for (Tab t : tabQ) {
-                if (t.child != null) {
-                    visualizations.write(t.name.toString() + " -> " + t.child.toString() + "\n");
-                } else {
-                    visualizations.write(t.name.toString() + " -> null\n");
-                }
-                visualizations.write("\tLevel:"+t.level+"\t\tCompatibles:"+t.compatibles);
-                visualizations.write("\n");
-            }
-            visualizations.write("\n\n");
-            visualizations.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
     }
 
     /**
@@ -363,6 +344,29 @@ public class NedExplain {
         }
 
         return null;
+    }
+
+    private void writeToFile() {
+        // table is fully initialized - write to file for inspection
+        try {
+            FileWriter visualizations =
+                    new FileWriter("/Users/Corie/Desktop/Summer_2019/Project/WhyNot/src/data_structures.txt",true);
+            visualizations.write("NedExplain Table:\n");
+            visualizations.write("------------------------\n");
+            for (Tab t : tabQ) {
+                if (t.child != null) {
+                    visualizations.write(t.name.toString() + " -> " + t.child.toString() + "\n");
+                } else {
+                    visualizations.write(t.name.toString() + " -> null\n");
+                }
+                visualizations.write("\tLevel:"+t.level+"\t\tCompatibles:"+t.compatibles);
+                visualizations.write("\n");
+            }
+            visualizations.write("\n\n");
+            visualizations.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
 }
