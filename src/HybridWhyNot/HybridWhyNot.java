@@ -2,6 +2,9 @@ package HybridWhyNot;
 
 import Util.*;
 import org.apache.calcite.rel.RelNode;
+
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 
@@ -62,7 +65,7 @@ public class HybridWhyNot {
         emptyOutput = new ArrayList<>();
         pickyManip = new ArrayList<>();
         nonPickyManip = new ArrayList<>();
-        computeCompatibles(unpicked);
+        computeCompatibles(unpicked,dag);
 
         Map<HybridTab,Boolean> visited = new HashMap<>();
         LinkedList<HybridTab> queue = new LinkedList<>();
@@ -225,7 +228,7 @@ public class HybridWhyNot {
      * Compatibility finder to initialize with first compatibles
      * @param tc unpicked data item we are looking for
      */
-    private void computeCompatibles(ConditionalTuple tc) {
+    private void computeCompatibles(ConditionalTuple tc, Map<HybridTab, ArrayList<HybridTab>> dag) {
         for (HybridTab m : hTabSorted) {
             if (m.name.getRelTypeName().equals("JdbcTableScan")) {
                 for (HashMap<String,Object> compatible : dirTc) {
@@ -235,6 +238,37 @@ public class HybridWhyNot {
                     }
                 }
             }
+        }
+
+        // now that we have all pieces of the HybridTab initialized, write to file to understand the graph
+        try {
+            FileWriter visualizations =
+                    new FileWriter("/Users/Corie/Desktop/Summer_2019/Project/WhyNot/src/data_structures.txt",true);
+            visualizations.write("HybridWhyNot DAG:\n");
+            visualizations.write("------------------------\n");
+            for (HybridTab h : dag.keySet()) {
+                if (h != null) {
+                    visualizations.write(h.name.toString());
+                } else {
+                    visualizations.write("null");
+                }
+                visualizations.write(" -> [");
+                List<String> children = new ArrayList<>();
+                for (HybridTab t : dag.get(h)) {
+                    children.add(t.name.toString());
+
+                }
+                String childrenSeparated = String.join(",",children);
+                visualizations.write(childrenSeparated);
+                visualizations.write("]\n");
+                if (h != null) {
+                    visualizations.write("\tCompatibles: " + h.compatibles+"\n");
+                }
+            }
+            visualizations.write("\n\n");
+            visualizations.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 }

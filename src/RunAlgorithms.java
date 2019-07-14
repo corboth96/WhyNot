@@ -61,6 +61,11 @@ public class RunAlgorithms {
         conn.closeConnection();
     }
 
+    /**
+     * Helper function to calculate time it takes to run the algorithms
+     * @param start - system start time
+     * @param finish - system end time
+     */
     private static void getTime(long start, long finish) {
         long timeElapsed = finish-start;
         System.out.println("Time elapsed: " + timeElapsed + " milliseconds");

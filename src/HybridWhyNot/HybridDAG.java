@@ -38,18 +38,9 @@ public class HybridDAG {
             RelRoot relRoot = p.rel(validatedNode);
             RelNode relNode = relRoot.rel;
 
-
-            HashMap<RelNode, Integer> levels = new HashMap<>();
             RelVisitor rv = new RelVisitor() {
                 @Override
                 public void visit(RelNode node, int ordinal, RelNode parent) {
-                    /*int level;
-                    if (parent == null) {
-                        level = 0;
-                    } else {
-                        level = levels.get(parent)+1;
-                    }
-                    levels.put(node,level);*/
                     HybridTab t = new HybridTab(node,parent);
 
                     if (parent == null) {
@@ -58,7 +49,7 @@ public class HybridDAG {
                     else {
                         HybridTab parentTab = null;
                         for (HybridTab tab : dag.keySet()) {
-                            if (tab.name != null) {
+                            if (tab != null) {
                                 if (tab.name.equals(parent)) {
                                     parentTab = tab;
                                     break;
@@ -70,11 +61,10 @@ public class HybridDAG {
                     }
 
                     if (node.getRelTypeName().equals("JdbcTableScan")) {
-                        HybridTab nullTab = new HybridTab(null,null);
-                        if (!dag.containsKey(nullTab)) {
-                            dag.put(nullTab,new ArrayList<>());
+                        if (!dag.containsKey(null)) {
+                            dag.put(null,new ArrayList<>());
                         }
-                        dag.get(nullTab).add(t);
+                        dag.get(null).add(t);
 
                     }
                     super.visit(node, ordinal, parent);
@@ -91,7 +81,6 @@ public class HybridDAG {
                 }
             };
             rv.go(relNode);
-
         }
         catch (SqlParseException | RelConversionException | ValidationException e) {
             e.printStackTrace();
@@ -122,7 +111,7 @@ public class HybridDAG {
         List<HybridTab> sortedNodes = new ArrayList<>();
         while (!stack.empty()) {
             HybridTab n = stack.pop();
-            if (n.name != null) {
+            if (n != null) {
                 sortedNodes.add(n);
             }
         }
@@ -155,7 +144,7 @@ public class HybridDAG {
     public List<HybridTab> findRoots(Map<HybridTab,ArrayList<HybridTab>> dag) {
         List<HybridTab> roots = new ArrayList<>();
         for (HybridTab name : dag.keySet()) {
-            if (name.name == null) {
+            if (name == null) {
                 roots.addAll(dag.get(name));
             }
         }
@@ -165,7 +154,7 @@ public class HybridDAG {
     public List<String> getTables(Map<HybridTab,ArrayList<HybridTab>> dag) {
         List<String> tables = new ArrayList<>();
         for (HybridTab name : dag.keySet()) {
-            if (name.name != null) {
+            if (name != null) {
                 if (name.name.getRelTypeName().equals("JdbcTableScan")) {
                     String tablename = name.name.getTable().getQualifiedName().get(1);
                     if (!tables.contains(tablename)) {

@@ -10,6 +10,8 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.tools.*;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -88,15 +90,20 @@ public class DAG {
             }
             dag.put(null,notAllocated);
 
-            /*
-            System.out.println("Bottom up");
-            // bottom up? Parent pointing to child
-            for (HashMap.Entry e : dag.entrySet()) {
-                System.out.print(e.getKey());
-                System.out.println(" -> "+e.getValue());
+            // now that DAG is initialized, write to file for inspection
+            try {
+                FileWriter visualizations =
+                        new FileWriter("/Users/Corie/Desktop/Summer_2019/Project/WhyNot/src/data_structures.txt");
+                visualizations.write("Why Not DAG:\n");
+                visualizations.write("------------------------\n");
+                for (HashMap.Entry e : dag.entrySet()) {
+                    visualizations.write(e.getKey()+ " -> "+e.getValue()+"\n");
+                }
+                visualizations.write("\n\n");
+                visualizations.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
-            System.out.println();
-            */
         }
         catch (SqlParseException | RelConversionException | ValidationException e) {
             e.printStackTrace();

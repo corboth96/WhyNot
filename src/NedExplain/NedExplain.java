@@ -10,6 +10,8 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.tools.*;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -243,6 +245,27 @@ public class NedExplain {
                     }
                 }
             }
+        }
+
+        // table is fully initialized - write to file for inspection
+        try {
+            FileWriter visualizations =
+                    new FileWriter("/Users/Corie/Desktop/Summer_2019/Project/WhyNot/src/data_structures.txt",true);
+            visualizations.write("NedExplain Table:\n");
+            visualizations.write("------------------------\n");
+            for (Tab t : tabQ) {
+                if (t.child != null) {
+                    visualizations.write(t.name.toString() + " -> " + t.child.toString() + "\n");
+                } else {
+                    visualizations.write(t.name.toString() + " -> null\n");
+                }
+                visualizations.write("\tLevel:"+t.level+"\t\tCompatibles:"+t.compatibles);
+                visualizations.write("\n");
+            }
+            visualizations.write("\n\n");
+            visualizations.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 
