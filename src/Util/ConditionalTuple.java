@@ -36,10 +36,31 @@ public class ConditionalTuple {
      * @param op - operation in {!=, =,<,>,<=,=>}
      * @param val - value to match
      */
-    public void addCondition(String var, String op, Object val) {
+    public void addCondition(String var, String op, Integer val) {
         Condition c = new Condition(var, op, val);
         conditions.add(c);
+    }
 
+    public boolean checkCondition(Double val) {
+
+        for (Condition c : conditions) {
+            switch (c.operator) {
+                case "=":
+                    System.out.println(val+" "+c.value);
+                    return val == c.value.doubleValue();
+                case "!=":
+                    return (val > c.value || val < c.value);
+                case ">":
+                    return val > c.value;
+                case ">=":
+                    return val >= c.value;
+                case "<=":
+                    return val <= c.value;
+                case "<":
+                    return val < c.value;
+            }
+        }
+        return false;
     }
 
     /**
@@ -88,7 +109,7 @@ public class ConditionalTuple {
     private class Condition {
         String variable;
         String operator; // {!=, =, >, >=, <=, <}
-        Object value;
+        Integer value;
 
         /**
          * Condition constructor
@@ -96,7 +117,7 @@ public class ConditionalTuple {
          * @param op - conditional operator
          * @param val - value to match
          */
-        private Condition(String var, String op, Object val) {
+        private Condition(String var, String op, Integer val) {
             this.variable = var;
             this.operator = op;
             this.value = val;

@@ -32,6 +32,7 @@ public class RunAlgorithms {
         List<ConditionalTuple> predicates = q.getPredicate(input);
         HashMap<String,String> unpickeds = q.getUnpicked(input);
 
+
         System.out.println("---------------------------WhyNot---------------------------");
         long start = System.currentTimeMillis();
 

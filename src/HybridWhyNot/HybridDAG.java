@@ -4,12 +4,17 @@ import Util.*;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.externalize.RelXmlWriter;
+import org.apache.calcite.rel.logical.LogicalAggregate;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.tools.*;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.*;
 
 /**
@@ -18,6 +23,10 @@ import java.util.*;
  * Date Created: Jul 8, 2019
  */
 public class HybridDAG {
+    public String agg;
+    public String condition;
+
+
     public Map<HybridTab, ArrayList<HybridTab>> generateDAG(String sql, DatabaseConnection conn) {
         Map<HybridTab, ArrayList<HybridTab>> dag = new HashMap<>();
         try {
@@ -37,6 +46,7 @@ public class HybridDAG {
             // Converts a SQL parse tree into a tree of relational expressions
             RelRoot relRoot = p.rel(validatedNode);
             RelNode relNode = relRoot.rel;
+            getAgg(sql,relNode);
 
             RelVisitor rv = new RelVisitor() {
                 @Override
@@ -87,6 +97,39 @@ public class HybridDAG {
         }
 
         return dag;
+    }
+
+    /**
+     * get the Aggregate that is being used for
+     * the query
+     * @param sql - query
+     * @param r - top relnode
+     */
+    private void getAgg(String sql, RelNode r) {
+        if (r.getRelTypeName().equals("LogicalAggregate")) {
+            LogicalAggregate aggNode = (LogicalAggregate) r;
+
+            String aggName = aggNode.getAggCallList().get(0).getAggregation().getName();
+            agg = aggName;
+
+            boolean found = false;
+            String unqualifiedVar = null;
+            String[] spaceSplit = sql.split(" ");
+            for (String i : spaceSplit) {
+                if (i.toUpperCase().contains(aggName+"(")) {
+                    String[] args = i.split("\\(|\\)");
+                    String var = args[1];
+                    if (var.contains(".")) {
+                        unqualifiedVar = var.split("\\.")[1];
+                        found = true;
+                    }
+                }
+                if (found) {
+                    condition = unqualifiedVar;
+                    break;
+                }
+            }
+        }
     }
 
 

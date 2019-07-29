@@ -121,6 +121,24 @@ public class Queries {
                         "JOIN db.MovieGenres mg on mg.movie_id = m.movie_id " +
                         "JOIN db.Genre g on g.genre_id = mg.genre_id WHERE g.genre = 'Action'";
                 break;
+            case 11:
+                sql = "select a.title, count(*) as actors from (" +
+                        "select m.movie_id, m.title, m.yearReleased, r.actor_id, g.genre_id, g.genre from movie m " +
+                        "left join roles r on r.movie_id = m.movie_id " +
+                        "left join moviegenres mg on mg.movie_id = m.movie_id " +
+                        "left join genre g on g.genre_id = mg.genre_id " +
+                        "where g.genre = 'Action' and m.yearReleased > 1990 " +
+                        ") a " +
+                        "group by a.title";
+                break;
+            case 12:
+                sql = "select d.fname, d.lname, avg(m.yearReleased) as AvgYearsActive from Director d " +
+                        "left join DirectedBy db on db.director_id = d.director_id " +
+                        "left join Movie m on m.movie_id = db.movie_id " +
+                        "left join MovieGenres mg on mg.movie_id = m.movie_id " +
+                        "left join Genre g on g.genre_id = mg.genre_id " +
+                        "where g.genre='Action' " +
+                        "group by d.fname,d.lname";
         }
         return sql;
     }
@@ -143,7 +161,7 @@ public class Queries {
                 unpicked.put("title", "Avatar 2");
                 break;
             case 3:
-                unpicked.put("title", "Aladdin");
+                unpicked.put("title", "Titanic");
                 break;
             case 4:
                 unpicked.put("title", "Toy Story 3");
@@ -165,6 +183,13 @@ public class Queries {
                 break;
             case 10:
                 unpicked.put("title", "Titanic");
+                break;
+            case 11:
+                unpicked.put("title", "Total Recall");
+                break;
+            case 12:
+                unpicked.put("fname", "John");
+                unpicked.put("lname","Lasseter");
                 break;
         }
         return unpicked;
@@ -234,6 +259,20 @@ public class Queries {
                 ct.addVTuple("Movie.title","Titanic");
                 predicate.add(ct);
                 break;
+            case 11:
+                ct = new ConditionalTuple();
+                ct.addVTuple("Movie.title","Total Recall");
+                ct.addVTuple("actors", "x1");
+                ct.addCondition("x1", ">", 20);
+                predicate.add(ct);
+                break;
+            case 12:
+                ct = new ConditionalTuple();
+                ct.addVTuple("Director.fname","John");
+                ct.addVTuple("Director.lname","Lasseter");
+                ct.addVTuple("AvgYearsActive", "x1");
+                ct.addCondition("x1", ">=", 2000);
+                predicate.add(ct);
         }
         return predicate;
     }

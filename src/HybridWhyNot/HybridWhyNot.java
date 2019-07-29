@@ -9,8 +9,8 @@ import java.util.*;
 
 
 /**
- * Hybrid WhyNot.WhyNot/NedExplain.NedExplain implementation
- * Adds improvements from NedExplain.NedExplain into WhyNot.WhyNot
+ * Hybrid WhyNot/NedExplain implementation
+ * Adds improvements from NedExplain into WhyNot
  * @author Corie Both
  * Date Created: Jul 8, 2019
  */
@@ -22,6 +22,7 @@ public class HybridWhyNot {
     private List<RelNode> nonPickyManip;
     private List<AnswerTuple> pickyManip;
     private List<RelNode> emptyOutput;
+    private HybridDAG hDAG;
 
     private List<HashMap<String,Object>> dirTc;
     private List<HashMap<String,Object>> inDirTc;
@@ -54,7 +55,7 @@ public class HybridWhyNot {
      * @return - detailed answer string
      */
     private String runWhyNot(String sql, ConditionalTuple unpicked) {
-        HybridDAG hDAG = new HybridDAG();
+        hDAG = new HybridDAG();
         Map<HybridTab, ArrayList<HybridTab>> dag = hDAG.generateDAG(sql,conn);
         List<String> tables = hDAG.getTables(dag);
         List<HybridTab> roots = hDAG.findRoots(dag);
@@ -65,7 +66,7 @@ public class HybridWhyNot {
         emptyOutput = new ArrayList<>();
         pickyManip = new ArrayList<>();
         nonPickyManip = new ArrayList<>();
-        computeCompatibles(unpicked,dag);
+        computeCompatibles(unpicked);
 
         Map<HybridTab,Boolean> visited = new HashMap<>();
         LinkedList<HybridTab> queue = new LinkedList<>();
@@ -78,7 +79,7 @@ public class HybridWhyNot {
         while (queue.size() != 0) {
             HybridTab m = queue.poll();
             visited.put(m,true);
-            boolean successorExists = successorExists(m);
+            boolean successorExists = successorExists(m,unpicked);
             if (successorExists) {
                 if (dag.get(m) != null) {
                     for (HybridTab next : dag.get(m)) {
@@ -101,7 +102,7 @@ public class HybridWhyNot {
      * @param m - manipulation we are looking at
      * @return true or false
      */
-    private boolean successorExists(HybridTab m) {
+    private boolean successorExists(HybridTab m, ConditionalTuple tc) {
         List<HashMap<String,Object>> output = ops.runQuery(conn,ops.convertToSqlString(m.name));
 
         if (output.size() == 0) {
@@ -116,7 +117,7 @@ public class HybridWhyNot {
         if (!m.name.getRelTypeName().equals("JdbcTableScan")) {
             for (HybridTab t : hTabSorted) {
                 if (t.name.equals(m.child)) {
-                    HybridSuccessors hs = findSuccessors(m,output);
+                    HybridSuccessors hs = findSuccessors(m,output,tc);
                     t.compatibles.addAll(hs.successors);
                     return hs.returnType;
                 }
@@ -140,9 +141,9 @@ public class HybridWhyNot {
      * Internal findSuccessors to keep tracing compatibles
      * @param m - manipulation being investigated
      * @param output - output list from running the manipulation
-     * @return HybridWhyNot.HybridWhyNot.HybridSuccessors: list of successors and true or false if picky or not
+     * @return HybridSuccessors: list of successors and true or false if picky or not
      */
-    private HybridSuccessors findSuccessors(HybridTab m, List<HashMap<String,Object>> output) {
+    private HybridSuccessors findSuccessors(HybridTab m, List<HashMap<String,Object>> output, ConditionalTuple tc) {
         List<HashMap<String,Object>> successors = new ArrayList<>();
         for (HashMap<String,Object> o : output) {
             for (HashMap<String,Object> tuple : dirTc) {
@@ -182,12 +183,114 @@ public class HybridWhyNot {
         }
 
         HybridSuccessors hs;
-        if (blocked.size() == m.compatibles.size() && m.compatibles.size() != 0) {
-            hs = new HybridSuccessors(successors,false);
+        if (hDAG.agg != null) {
+            boolean entailed = entailsCondition(output,tc,successors);
+            if (blocked.size() == m.compatibles.size() && m.compatibles.size() != 0
+                    && !entailed) {
+                hs = new HybridSuccessors(successors, false);
+
+            } else {
+                hs = new HybridSuccessors(successors, true);
+            }
         } else {
-            hs = new HybridSuccessors(successors, true);
+            if (blocked.size() == m.compatibles.size() && m.compatibles.size() != 0) {
+                hs = new HybridSuccessors(successors, false);
+
+            } else {
+                hs = new HybridSuccessors(successors, true);
+            }
         }
         return hs;
+    }
+
+    private boolean entailsCondition(List<HashMap<String,Object>> output, ConditionalTuple tc, List<HashMap<String,Object>> successors) {
+        // if blocked is not empty and v not subquery of m
+        // OR V is a subquery of m and condition not entailed
+
+        // output does not contain what we are looking for: assume OK
+        if (hDAG.condition != null && !output.get(0).containsKey(hDAG.condition)) {
+            return true;
+        } else if (hDAG.condition != null && output.get(0).containsKey(hDAG.condition)) {
+            // aggregates MIN, MAX, AVG, SUM
+            List<Object> visited = new ArrayList<>();
+
+            for (HashMap<String, Object> s : successors) {
+                List<HashMap<String,Object>> set = new ArrayList<>();
+                for (String key : s.keySet()) {
+
+                    if (!visited.contains(s.get(key))) {
+                        visited.add(s.get(key));
+                        for (HashMap<String,Object> out : output) {
+                            if (out.entrySet().containsAll(s.entrySet())) {
+                                set.add(out);
+                            }
+                        }
+
+                        double totalValue = 0;
+                        switch (hDAG.agg) {
+                            case "AVG":
+                                double addUp = 0;
+                                for (HashMap<String,Object> out : set) {
+                                    addUp += (Integer) out.get(hDAG.condition);
+                                }
+                                totalValue = addUp / set.size();
+                                break;
+                            case "MIN":
+                                totalValue = Integer.MAX_VALUE;
+                                for (HashMap<String,Object> out : set) {
+                                    double currValue = (Double) out.get(hDAG.condition);
+                                    if (currValue < totalValue) {
+                                        totalValue = currValue;
+                                    }
+                                }
+                                break;
+                            case "MAX":
+                                totalValue = Integer.MIN_VALUE;
+                                for (HashMap<String,Object> out : set) {
+                                    double currValue = (Double) out.get(hDAG.condition);
+                                    if (currValue > totalValue) {
+                                        totalValue = currValue;
+                                    }
+                                }
+                                break;
+                            case "SUM":
+                                double add = 0;
+                                for (HashMap<String,Object> out : set) {
+                                    add += (Double) out.get(hDAG.condition);
+                                }
+                                totalValue = add;
+                                break;
+                        }
+                        return tc.checkCondition(totalValue);
+                    }
+                }
+            }
+        } else {
+            // aggregates COUNT
+            List<Object> visited = new ArrayList<>();
+            for (HashMap<String, Object> s : successors) {
+                List<HashMap<String,Object>> set = new ArrayList<>();
+                for (String key : s.keySet()) {
+                    if (!visited.contains(s.get(key))) {
+                        visited.add(s.get(key));
+                        for (HashMap<String,Object> out : output) {
+                            if (out.entrySet().containsAll(s.entrySet())) {
+                                set.add(out);
+                            }
+                        }
+
+                        double totalValue = 0;
+                        switch (hDAG.agg) {
+                            case "COUNT":
+                                totalValue = set.size();
+                                break;
+                        }
+                        return tc.checkCondition(totalValue);
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -229,7 +332,7 @@ public class HybridWhyNot {
      * Compatibility finder to initialize with first compatibles
      * @param tc unpicked data item we are looking for
      */
-    private void computeCompatibles(ConditionalTuple tc, Map<HybridTab, ArrayList<HybridTab>> dag) {
+    private void computeCompatibles(ConditionalTuple tc) {
         for (HybridTab m : hTabSorted) {
             if (m.name.getRelTypeName().equals("JdbcTableScan")) {
                 for (HashMap<String,Object> compatible : dirTc) {
