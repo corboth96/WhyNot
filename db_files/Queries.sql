@@ -97,7 +97,7 @@ having count(director_id)=1);
 
 # QUERY 9: Get all movies that have more than 1 famous actor ("famous" meaning in more than 5 movies)
 # Unpicked: Mrs. Doubtfire
-# Why? Has only 1 famous actor in it
+# WHY? Has only 1 famous actor in it
 select c.movie_id, c.title, c.yearReleased, movieCount from(
 select m.movie_id,m.title,m.yearReleased,  count(*) as movieCount from movie m
 join roles r on r.movie_id = m.movie_id
@@ -114,7 +114,31 @@ order by c.movie_id;
 
 # QUERY 10: Get all action movies
 # Unpicked: Titanic
-# Why? Not an action movie
+# WHY? Not an action movie
 SELECT m.movie_id,m.title,m.yearReleased FROM Movie m
 JOIN MovieGenres mg on mg.movie_id = m.movie_id
 JOIN Genre g on g.genre_id = mg.genre_id WHERE g.genre = 'Action';
+
+# QUERY 11: Get the title and actor count of all action movies made after 1990
+# Unpicked: (Total Recall, 21)
+# Why? made in 1990
+select a.title, count(*) as actors from (
+select m.movie_id, m.title, m.yearReleased, r.actor_id, g.genre_id, g.genre from movie m
+left join roles r on r.movie_id = m.movie_id
+left join moviegenres mg on mg.movie_id = m.movie_id
+left join genre g on g.genre_id = mg.genre_id
+where g.genre = 'Action' and m.yearReleased > 1990
+) a
+group by a.title;
+
+
+# QUERY 12: Get the average year of movie releases for directors who directed action movies
+# Unpicked: (John Lasseter, 2000)
+# WHY? Not an action movie director
+select d.fname, d.lname, avg(m.yearReleased) as AvgYearActive from Director d
+left join DirectedBy db on db.director_id = d.director_id
+left join Movie m on m.movie_id = db.movie_id
+left join MovieGenres mg on mg.movie_id = m.movie_id
+left join Genre g on g.genre_id = mg.genre_id
+where g.genre='Action'
+group by d.fname,d.lname;

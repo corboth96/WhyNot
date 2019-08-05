@@ -1,7 +1,16 @@
 # Improving the Implementation of Why Not
-Original algorithm provided by Adriane Chapman and H. V. Jagadish. 2009. Why Not. SIGMOD Conference (2009), 523–534.
-Seeking to improve this algorithm by including improvements proposed by Katerina Tzompanaki Nicole Bidoit, Melanie Herschel. 2014. Query-Based Why-Not Provenance with NedExplain. EDBT (2014), 145–156.
+The goal of this project was to analyze and understand the state-of-the-art algorithms for why not queries in order to combine these algorithms into one complete system to provide efficient and detailed answers for why not questions.
 
+Why Not is the first state-of-the-art algorithm that thinks of SQL queries in terms of a directed acyclic graph. To find the manipulations in the query that are causing the data to not be returned, we traverse the graph in a BFS order and evaluate the output of each manipulation to determine if our data item is lost at that step.
+
+On the other hand, NedExplain is a follow-up to the original algorithm that uses a table rather than a directed acyclic graph. Here, this algorithm seeks to improve on the original algorithm by providing better tracing for the tuples that we are looking for at each step in the algorithm. This seeks to provide a better answer for the why not query by providing a better linkage between the manipulation and the tuples lost at that manipulation.
+
+In order to evaluate these algorithms to determine how to combine these in the most effective way possible, we go about implementing each of these algorithms as described in their respective papers. In order to build the primary data structures (DAG and Table), we investigated and successfully integrated Apache Calcite as a SQL parser that could easily convert our queries into relational algebra parse trees. Once we implemented each of these algorithms, we had a better understanding of the benefits and drawbacks of each and were more capable of picking and choosing the best of each in order to create a new, more efficient algorithm. The algorithm implemented here is HybridWhyNot and seeks to take the best parts of each algorithm in order to create a new-and-improved algorithm.
+
+*Why Not*: Adriane Chapman and H. V. Jagadish. 2009. Why Not. SIGMOD Conference (2009), 523–534. <br>
+*NedExplain*: Katerina Tzompanaki Nicole Bidoit, Melanie Herschel. 2014. Query-Based Why-Not Provenance with NedExplain. EDBT (2014), 145–156.
+
+Paper detailing the work provided in this project can be accessed at [INSERT LINK WHEN AVAILABLE].
 
 
 ## Before Running
@@ -24,11 +33,11 @@ Seeking to improve this algorithm by including improvements proposed by Katerina
     CREATE DATABASE smallmovies;
     USE smallmovies;
     ```
-    2. Create user and grant privileges on it
+    2. Create user and grant privileges on it (change username and password if different credentials wanted)
     ```
-    GRANT ALL PRIVILEGES ON smallmovies.* TO 'corie'@'localhost' IDENTIFIED BY '1234' WITH GRANT OPTION;
+    GRANT ALL PRIVILEGES ON smallmovies.* TO 'user'@'localhost' IDENTIFIED BY 'password' WITH GRANT OPTION;
     ```
-    **Note**: If you want to use a different user/password, will have to update this in *DatabaseConnection.java*
+    **Note**: If you want to use a different user/password, will have to update this in *DatabaseConnection.java* also
 
     3. Creates tables, such as:
     ```
@@ -75,13 +84,17 @@ Set running class as *RunAlgorithms.java*
 ## Running the Project
 Run the project by pressing Run.
 
-The program prompts for user input for which query to run. Enter 0-10 for the corresponding query. This will run the query
+The program prompts for user input for which query to run. Enter 0-12 for the corresponding query. This will run the query
 and the three algorithms for the corresponding missing data.
 
 ### Outputs
 1. The results from WhyNot
 2. The results from NedExplain
 3. The results from HybridWhyNot
+4. The running time for each algorithm
+
+### Note
+At this time, the answers being returned are the names of the RelNodes that Apache Calcite generates in relation to the relational algebra operators. Converting these into an understandable format for a novice user is a step of future work. At this time, the algorithms write out their data structures (table, DAG, HybridDAG) to a text file so that you can use this data structure information, along with the returned manipulations in the answer, to determine what manipulation this corresponds to. This is obviously a shortcoming of the current implementation with Apache Calcite, but more work can be done to determine how to get this information in a more readable format.
 
 ## Queries Explained
 All the queries being used by the project currently are detailed in *Queries.sql*. In this file, the queries are
@@ -159,4 +172,49 @@ current manipulation, current manipulation's child, level, compatibles, input an
 
 4. Queries.java
 
-    Class that contains 11 queries and their respective unpicked data items/conditional tuples for testing.
+    Class that contains 12 queries and their respective unpicked data items/conditional tuples for testing.
+
+## Algorithm Discussion
+
+With the implementation of Why Not and NedExplain, we have been able to isolate current issues in these algorithms.
+
+### Why Not Shortcomings
+- Inaccurate tuple tracing
+- Inaccurate results due to reliance on attribute preservation (i.e. if the question is Why not title = Titanic, will be looking specifically for title.)
+
+### NedExplain Shortcomings
+- Large storage space needed for storing all inputs and outputs
+- Less efficient because has to define stopping criteria
+
+### Hybrid Why Not Discussion
+
+#### Borrowed Components
+- Conditional Tuple from NedExplain
+- Directed Acyclic Graph from Why Not
+- Table from NedExplain (excluding inputs and outputs) as nodes in DAG for better tuple tracing
+- Detailed Answer from NedExplain
+
+#### Benefits
+- Less storage space needed in the table
+- Efficient traversal and no need for stopping conditions based on the DAG
+- Better answers: highlights thnot only the manipulation but the tuples that are lost at that manipulation
+
+## Future Work
+With the completion of the three algorithms as proposed above, we have successfully improved upon the Why Not and NedExplain algorithms in order to create our new Hybrid Why Not algorithm.
+
+Foreseen future work can include:
+1. NedExplain issue: Queries 7, 10, and 11
+
+Per the queries, in *Queries.java*, results are not being returned for these aforementioned queries. This could be due to the stopping criteria of the NedExplain algorithm or another misstep in the implementation of the algorithm (though this does not seem to be affecting the Hybrid Why Not). Exploration should confirm if this algorithm is working as it should be.
+
+2. User Interface
+
+The next foreseeable step is to create a user interface where the user can enter their own queries and unpicked data items in order to get a result returned for why the user-written queries are not returning the expected results. This is meant to be an educational tool where users can understand the mistakes they are making by running their queries and expected results through this "debugger".
+
+In order for this to happen, work will have to be done in order to provide the user with a more viewable friendly way to see the manipulations causing the data to not be returned. At the current step, the Apache Calcite RelNodes are being returned and this would not be helpful to a user who does not want to have to understand what this means. These RelNodes should be returned in a more user-friendly fashion.
+
+The user interface should then be a GUI that allows the user to enter their queries and unpicked data items to interact with the algorithms.
+
+3. Query Mutation
+
+Another foreseeable step given the fact that we can isolate the manipulations that are causing the data to be lost is to provide automatic query mutation. Instead of just returning the manipulation to the user, a query mutation tool would use the algorithm built here in order to mutate the picky manipulation until it returns the unpicked data item as expected.  Here, the answer returned to the user would not be a manipulation, but a re-write of the whole SQL query that now returns the unpicked data item.

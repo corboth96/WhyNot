@@ -32,8 +32,8 @@ public class DatabaseConnection {
     private Connection createConnection() {
         String driverStr = "com.mysql.cj.jdbc.Driver";
         String url = "jdbc:mysql://127.0.0.1:3306/smallmovies?serverTimezone=EST";
-        String user = "corie";
-        String password = "1234";
+        String user = "user";
+        String password = "password";
 
         try {
             Class.forName("org.apache.calcite.jdbc.Driver");

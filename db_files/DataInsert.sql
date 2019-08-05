@@ -2,7 +2,7 @@ CREATE DATABASE  IF NOT EXISTS `smallmovies` /*!40100 DEFAULT CHARACTER SET lati
 USE `smallmovies`;
 -- MySQL dump 10.13  Distrib 5.7.17, for macos10.12 (x86_64)
 
-GRANT ALL PRIVILEGES ON smallmovies.* TO 'corie'@'localhost' IDENTIFIED BY '1234' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON smallmovies.* TO 'user'@'localhost' IDENTIFIED BY 'password' WITH GRANT OPTION;
 --
 -- Host: 127.0.0.1    Database: smallmovies
 -- ------------------------------------------------------
